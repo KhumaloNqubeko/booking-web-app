@@ -1,0 +1,54 @@
+@model VenueFormViewModel
+@{
+    ViewData["Title"] = "Edit Venue";
+}
+
+<section class="form-shell">
+    <div class="form-header">
+        <div>
+            <p class="eyebrow">Edit venue</p>
+            <h1>Refine the venue details.</h1>
+        </div>
+        <a class="button-secondary" asp-controller="VenuesPage" asp-action="Index">Back to list</a>
+    </div>
+
+    <div asp-validation-summary="All"></div>
+
+    <form asp-controller="VenuesPage" asp-action="Edit" asp-route-id="@Model.Id" method="post" enctype="multipart/form-data" class="grid-form">
+        <input asp-for="Id" type="hidden" />
+        <input asp-for="ImageUrl" type="hidden" />
+        <div class="field">
+            <label asp-for="Name"></label>
+            <input asp-for="Name" />
+            <span asp-validation-for="Name"></span>
+        </div>
+        <div class="field">
+            <label asp-for="Location"></label>
+            <input asp-for="Location" />
+            <span asp-validation-for="Location"></span>
+        </div>
+        <div class="field">
+            <label asp-for="Capacity"></label>
+            <input asp-for="Capacity" type="number" min="1" />
+            <span asp-validation-for="Capacity"></span>
+        </div>
+        <div class="field">
+            <label asp-for="ImageFile"></label>
+            <input asp-for="ImageFile" type="file" accept=".jpg,.jpeg,.png,.webp,.gif" />
+            <span asp-validation-for="ImageFile"></span>
+        </div>
+        @if (!string.IsNullOrWhiteSpace(Model.ImageUrl))
+        {
+            <div class="field-wide">
+                <span class="eyebrow">Current image</span>
+                <img class="image-preview image-preview-compact" src="@Model.ImageUrl" alt="@Model.Name" />
+            </div>
+        }
+        <div class="field-wide">
+            <div class="button-row">
+                <button type="submit" class="button-primary">Update Venue</button>
+                <a class="button-secondary" asp-controller="VenuesPage" asp-action="Details" asp-route-id="@Model.Id">View Details</a>
+            </div>
+        </div>
+    </form>
+</section>

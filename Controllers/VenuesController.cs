@@ -1,8 +1,8 @@
-﻿using Booking_webapp.Data;
+using Booking_webapp.Data;
 using Booking_webapp.Models;
 using Booking_webapp.Models.Entities;
-using Microsoft.AspNetCore.Http;
 using Microsoft.AspNetCore.Mvc;
+using Microsoft.EntityFrameworkCore;
 
 namespace Booking_webapp.Controllers
 {
@@ -11,35 +11,36 @@ namespace Booking_webapp.Controllers
     public class VenuesController : ControllerBase
     {
         public readonly ApplicationDbContext dbContext;
+
         public VenuesController(ApplicationDbContext dbContext)
         {
             this.dbContext = dbContext;
         }
 
-        [HttpGet("{id}")]
-        public ActionResult GetVenue(int id) { 
-            var venue = dbContext.Venues.Find(id);
+        [HttpGet("{id:guid}")]
+        public async Task<ActionResult> GetVenue(Guid id)
+        {
+            var venue = await dbContext.Venues.FindAsync(id);
 
             if (venue == null)
             {
-                throw new KeyNotFoundException($"Venue with ID {id} was not found.");
+                return NotFound(new { message = "The requested venue was not found." });
             }
 
             return Ok(venue);
         }
 
         [HttpGet]
-        public IActionResult GetAllVenues()
+        public async Task<IActionResult> GetAllVenues()
         {
-            var venues = dbContext.Venues.ToList();
-
+            var venues = await dbContext.Venues.ToListAsync();
             return Ok(venues);
         }
 
         [HttpPost]
-        public IActionResult PostVenue(VenueDto venueDto)
+        public async Task<IActionResult> PostVenue(VenueDto venueDto)
         {
-            var venue = new Venue()
+            var venue = new Venue
             {
                 Name = venueDto.Name,
                 Location = venueDto.Location,
@@ -48,19 +49,19 @@ namespace Booking_webapp.Controllers
             };
 
             dbContext.Venues.Add(venue);
-            dbContext.SaveChanges();
+            await dbContext.SaveChangesAsync();
 
-            return Ok(venue);
+            return CreatedAtAction(nameof(GetVenue), new { id = venue.Id }, venue);
         }
 
-        [HttpPut("{id}")]
-        public IActionResult UpdateVenue(int id, VenueDto venueDto)
+        [HttpPut("{id:guid}")]
+        public async Task<IActionResult> UpdateVenue(Guid id, VenueDto venueDto)
         {
-            var venue = dbContext.Venues.Find(id);
+            var venue = await dbContext.Venues.FindAsync(id);
 
             if (venue == null)
             {
-                throw new KeyNotFoundException($"Venue with ID {id} was not found.");
+                return NotFound(new { message = "The requested venue was not found." });
             }
 
             venue.Name = venueDto.Name;
@@ -68,9 +69,33 @@ namespace Booking_webapp.Controllers
             venue.Capacity = venueDto.Capacity;
             venue.ImageUrl = venueDto.ImageUrl;
 
-            dbContext.SaveChanges();
+            await dbContext.SaveChangesAsync();
 
             return Ok(venue);
+        }
+
+        [HttpDelete("{id:guid}")]
+        public async Task<IActionResult> DeleteVenue(Guid id)
+        {
+            var venue = await dbContext.Venues.FindAsync(id);
+
+            if (venue == null)
+            {
+                return NotFound(new { message = "The requested venue was not found." });
+            }
+
+            // Block deletes for venues that already have linked bookings.
+            var hasBookings = await dbContext.Bookings.AnyAsync(b => b.VenueId == id);
+
+            if (hasBookings)
+            {
+                return Conflict(new { message = "This venue cannot be deleted because it is linked to existing bookings." });
+            }
+
+            dbContext.Venues.Remove(venue);
+            await dbContext.SaveChangesAsync();
+
+            return Ok(new { message = "Venue deleted successfully." });
         }
     }
 }

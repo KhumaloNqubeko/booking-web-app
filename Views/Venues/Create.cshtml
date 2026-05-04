@@ -1,0 +1,48 @@
+@model VenueFormViewModel
+@{
+    ViewData["Title"] = "Create Venue";
+}
+
+<section class="form-shell">
+    <div class="form-header">
+        <div>
+            <p class="eyebrow">New venue</p>
+            <h1>Add a standout space.</h1>
+        </div>
+        <a class="button-secondary" asp-controller="VenuesPage" asp-action="Index">Back to list</a>
+    </div>
+
+    <div asp-validation-summary="All"></div>
+
+    <form asp-controller="VenuesPage" asp-action="Create" method="post" enctype="multipart/form-data" class="grid-form">
+        <div class="field">
+            <label asp-for="Name"></label>
+            <input asp-for="Name" />
+            <span asp-validation-for="Name"></span>
+        </div>
+        <div class="field">
+            <label asp-for="Location"></label>
+            <input asp-for="Location" />
+            <span asp-validation-for="Location"></span>
+        </div>
+        <div class="field">
+            <label asp-for="Capacity"></label>
+            <input asp-for="Capacity" type="number" min="1" />
+            <span asp-validation-for="Capacity"></span>
+        </div>
+        <div class="field">
+            <label asp-for="ImageFile"></label>
+            <input asp-for="ImageFile" type="file" accept=".jpg,.jpeg,.png,.webp,.gif" />
+            <span asp-validation-for="ImageFile"></span>
+        </div>
+        <div class="field-wide">
+            <p class="hint-text">Venue images are uploaded to Azure Blob Storage. Supported formats: JPG, PNG, WEBP, GIF. Maximum size: 5 MB.</p>
+        </div>
+        <div class="field-wide">
+            <div class="button-row">
+                <button type="submit" class="button-primary">Save Venue</button>
+                <a class="button-secondary" asp-controller="VenuesPage" asp-action="Index">Cancel</a>
+            </div>
+        </div>
+    </form>
+</section>

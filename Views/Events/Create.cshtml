@@ -1,0 +1,53 @@
+@model EventFormViewModel
+@{
+    ViewData["Title"] = "Create Event";
+}
+
+<section class="form-shell">
+    <div class="form-header">
+        <div>
+            <p class="eyebrow">New event</p>
+            <h1>Plan the experience.</h1>
+        </div>
+        <a class="button-secondary" asp-controller="EventsPage" asp-action="Index">Back to list</a>
+    </div>
+
+    <div asp-validation-summary="All"></div>
+
+    <form asp-controller="EventsPage" asp-action="Create" method="post" enctype="multipart/form-data" class="grid-form">
+        <div class="field">
+            <label asp-for="Name"></label>
+            <input asp-for="Name" />
+            <span asp-validation-for="Name"></span>
+        </div>
+        <div class="field">
+            <label asp-for="ImageFile"></label>
+            <input asp-for="ImageFile" type="file" accept=".jpg,.jpeg,.png,.webp,.gif" />
+            <span asp-validation-for="ImageFile"></span>
+        </div>
+        <div class="field-wide">
+            <label asp-for="Description"></label>
+            <textarea asp-for="Description"></textarea>
+            <span asp-validation-for="Description"></span>
+        </div>
+        <div class="field">
+            <label asp-for="StartDateTime"></label>
+            <input asp-for="StartDateTime" type="datetime-local" />
+            <span asp-validation-for="StartDateTime"></span>
+        </div>
+        <div class="field">
+            <label asp-for="EndDateTime"></label>
+            <input asp-for="EndDateTime" type="datetime-local" />
+            <span asp-validation-for="EndDateTime"></span>
+        </div>
+        <div class="field-wide">
+            <p class="hint-text">Event images are uploaded to Azure Blob Storage. Supported formats: JPG, PNG, WEBP, GIF. Maximum size: 5 MB.</p>
+        </div>
+        <div class="field-wide">
+            <div class="button-row">
+                <button type="submit" class="button-primary">Save Event</button>
+                <a class="button-secondary" asp-controller="EventsPage" asp-action="Index">Cancel</a>
+            </div>
+        </div>
+    </form>
+</section>

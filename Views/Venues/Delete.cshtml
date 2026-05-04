@@ -1,0 +1,41 @@
+@model VenueDetailsViewModel
+@{
+    ViewData["Title"] = "Delete Venue";
+}
+
+<section class="delete-shell">
+    <div class="delete-header">
+        <div>
+            <p class="eyebrow">Delete venue</p>
+            <h1>Review before removing @Model.Name.</h1>
+        </div>
+        <a class="button-secondary" asp-controller="VenuesPage" asp-action="Index">Back to list</a>
+    </div>
+
+    @if (!string.IsNullOrWhiteSpace(Model.ImageUrl))
+    {
+        <img class="image-preview image-preview-compact" src="@Model.ImageUrl" alt="@Model.Name" />
+    }
+
+    <div class="detail-grid" style="margin-top: 1rem;">
+        <article class="detail-card">
+            <span class="eyebrow">Location</span>
+            <strong>@Model.Location</strong>
+        </article>
+        <article class="detail-card">
+            <span class="eyebrow">Capacity</span>
+            <strong>@Model.Capacity guests</strong>
+        </article>
+        <article class="detail-card">
+            <span class="eyebrow">Linked bookings</span>
+            <strong>@Model.BookingCount</strong>
+        </article>
+    </div>
+
+    <form asp-controller="VenuesPage" asp-action="DeleteConfirmed" asp-route-id="@Model.Id" method="post" style="margin-top: 1.2rem;">
+        <div class="button-row">
+            <button type="submit" class="button-danger">Delete Venue</button>
+            <a class="button-secondary" asp-controller="VenuesPage" asp-action="Details" asp-route-id="@Model.Id">Cancel</a>
+        </div>
+    </form>
+</section>

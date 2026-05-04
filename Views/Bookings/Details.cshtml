@@ -1,0 +1,38 @@
+@model BookingDetailsViewModel
+@{
+    ViewData["Title"] = "Booking Details";
+}
+
+<section class="detail-shell">
+    <div class="detail-header">
+        <div>
+            <p class="eyebrow">Booking details</p>
+            <h1>@Model.EventName at @Model.VenueName</h1>
+        </div>
+        <div class="button-row">
+            <a class="button-secondary" asp-controller="BookingsPage" asp-action="Edit" asp-route-id="@Model.Id">Edit</a>
+            <a class="button-secondary" asp-controller="BookingsPage" asp-action="Index">Back</a>
+        </div>
+    </div>
+
+    <div class="meta-grid">
+        <article class="meta-card">
+            <span class="eyebrow">Venue</span>
+            <strong>@Model.VenueName</strong>
+        </article>
+        <article class="meta-card">
+            <span class="eyebrow">Event</span>
+            <strong>@Model.EventName</strong>
+        </article>
+        <article class="meta-card">
+            <span class="eyebrow">Booking date</span>
+            <strong>@Model.BookingDate.ToString("dd MMM yyyy")</strong>
+        </article>
+        <article class="meta-card">
+            <span class="eyebrow">Status</span>
+            <strong>
+                <span class="status-pill status-@Model.Status.ToLowerInvariant()">@Model.Status</span>
+            </strong>
+        </article>
+    </div>
+</section>

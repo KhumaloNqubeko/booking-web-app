@@ -1,0 +1,68 @@
+@model HomeDashboardViewModel
+@{
+    ViewData["Title"] = "Dashboard";
+}
+
+<section class="hero-panel">
+    <div>
+        <h1>Bookings</h1>
+    </div>
+    <div class="hero-actions">
+        <a class="button-primary" asp-controller="BookingsPage" asp-action="Create">Create Booking</a>
+        <a class="button-secondary" asp-controller="VenuesPage" asp-action="Create">Add Venue</a>
+    </div>
+</section>
+
+<section class="stats-grid">
+    <article class="stat-card">
+        <span class="stat-label">Venues</span>
+        <strong>@Model.VenueCount</strong>
+        <p>Spaces ready for hosting.</p>
+    </article>
+    <article class="stat-card">
+        <span class="stat-label">Events</span>
+        <strong>@Model.EventCount</strong>
+        <p>Programs currently listed.</p>
+    </article>
+    <article class="stat-card">
+        <span class="stat-label">Bookings</span>
+        <strong>@Model.BookingCount</strong>
+        <p>Reservations tracked here.</p>
+    </article>
+</section>
+
+<section class="panel">
+    <div class="panel-heading">
+        <div>
+            <p class="eyebrow">Recent activity</p>
+            <h2>Latest bookings</h2>
+        </div>
+        <a class="text-link" asp-controller="BookingsPage" asp-action="Index">Open booking board</a>
+    </div>
+
+    @if (Model.RecentBookings.Any())
+    {
+        <div class="ledger">
+            @foreach (var booking in Model.RecentBookings)
+            {
+                <article class="ledger-row">
+                    <div>
+                        <h3>@booking.EventName</h3>
+                        <p>@booking.VenueName</p>
+                    </div>
+                    <div class="ledger-meta">
+                        <span>@booking.BookingDate.ToString("dd MMM yyyy")</span>
+                        <span class="status-pill status-@booking.Status.ToLowerInvariant()">@booking.Status</span>
+                    </div>
+                </article>
+            }
+        </div>
+    }
+    else
+    {
+        <div class="empty-state">
+            <h3>No bookings yet</h3>
+            <p>Start with a venue and event, then create your first booking from the dashboard.</p>
+        </div>
+    }
+</section>

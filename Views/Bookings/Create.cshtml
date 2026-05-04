@@ -1,0 +1,48 @@
+@model BookingFormViewModel
+@{
+    ViewData["Title"] = "Create Booking";
+}
+
+<section class="form-shell">
+    <div class="form-header">
+        <div>
+            <p class="eyebrow">New booking</p>
+        </div>
+        <a class="button-secondary" asp-controller="BookingsPage" asp-action="Index">Back to board</a>
+    </div>
+
+    <div asp-validation-summary="All"></div>
+
+    <form asp-controller="BookingsPage" asp-action="Create" method="post" class="grid-form">
+        <div class="field">
+            <label asp-for="VenueId"></label>
+            <select asp-for="VenueId" asp-items="Model.VenueOptions">
+                <option value="">Select a venue</option>
+            </select>
+            <span asp-validation-for="VenueId"></span>
+        </div>
+        <div class="field">
+            <label asp-for="EventId"></label>
+            <select asp-for="EventId" asp-items="Model.EventOptions">
+                <option value="">Select an event</option>
+            </select>
+            <span asp-validation-for="EventId"></span>
+        </div>
+        <div class="field">
+            <label asp-for="BookingDate"></label>
+            <input asp-for="BookingDate" type="date" />
+            <span asp-validation-for="BookingDate"></span>
+        </div>
+        <div class="field">
+            <label asp-for="Status"></label>
+            <select asp-for="Status" asp-items="Model.StatusOptions"></select>
+            <span asp-validation-for="Status"></span>
+        </div>
+        <div class="field-wide">
+            <div class="button-row">
+                <button type="submit" class="button-primary">Save Booking</button>
+                <a class="button-secondary" asp-controller="BookingsPage" asp-action="Index">Cancel</a>
+            </div>
+        </div>
+    </form>
+</section>

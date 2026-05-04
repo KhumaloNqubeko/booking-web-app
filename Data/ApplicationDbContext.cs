@@ -15,5 +15,22 @@ namespace Booking_webapp.Data
         public DbSet<Event> Events { get; set; }
 
         public DbSet<Booking> Bookings { get; set; }
+
+        protected override void OnModelCreating(ModelBuilder modelBuilder)
+        {
+            base.OnModelCreating(modelBuilder);
+
+            modelBuilder.Entity<Booking>()
+                .Property(b => b.BookingDate)
+                .HasColumnType("date");
+
+            modelBuilder.Entity<Event>()
+                .Property(e => e.StartDateTime)
+                .HasColumnType("timestamp without time zone");
+
+            modelBuilder.Entity<Event>()
+                .Property(e => e.EndDateTime)
+                .HasColumnType("timestamp without time zone");
+        }
     }
 }

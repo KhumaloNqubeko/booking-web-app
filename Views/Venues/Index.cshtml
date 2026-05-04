@@ -1,0 +1,60 @@
+@model VenueDirectoryViewModel
+@{
+    ViewData["Title"] = "Venues";
+}
+
+<section class="page-header">
+    <div>
+        <p class="eyebrow">Venue management</p>
+        <h1>Browse the spaces ready for your next booking.</h1>
+    </div>
+    <div class="page-actions">
+        <a class="button-primary" asp-controller="VenuesPage" asp-action="Create">Add Venue</a>
+    </div>
+</section>
+
+<section class="panel filter-panel">
+    <form method="get" asp-controller="VenuesPage" asp-action="Index" class="search-bar">
+        <input type="search" name="searchTerm" value="@Model.SearchTerm" placeholder="Search venues by name or location" />
+        <button type="submit" class="button-primary">Search</button>
+        <a class="button-secondary" asp-controller="VenuesPage" asp-action="Index">Clear</a>
+    </form>
+</section>
+
+@if (Model.Venues.Any())
+{
+    <section class="showcase-grid">
+        @foreach (var venue in Model.Venues)
+        {
+            <article class="showcase-card venue-showcase-card">
+                @if (!string.IsNullOrWhiteSpace(venue.ImageUrl))
+                {
+                    <img class="showcase-art" src="@venue.ImageUrl" alt="@venue.Name" />
+                }
+                else
+                {
+                    <div class="showcase-art"></div>
+                }
+
+                <div class="showcase-copy venue-showcase-copy">
+                    <span class="section-badge">@venue.Location</span>
+                    <h2>@venue.Name</h2>
+                    <p>Capacity: @venue.Capacity guests</p>
+                    <p>Linked bookings: @venue.BookingCount</p>
+                    <div class="venue-card-actions">
+                        <a class="venue-action venue-action-primary" asp-controller="VenuesPage" asp-action="Details" asp-route-id="@venue.Id">Details</a>
+                        <a class="venue-action venue-action-secondary" asp-controller="VenuesPage" asp-action="Edit" asp-route-id="@venue.Id">Edit</a>
+                        <a class="venue-action venue-action-danger" asp-controller="VenuesPage" asp-action="Delete" asp-route-id="@venue.Id">Delete</a>
+                    </div>
+                </div>
+            </article>
+        }
+    </section>
+}
+else
+{
+    <div class="empty-state">
+        <h3>No venues matched your search</h3>
+        <p>Try a different venue name or location, or add a new venue to get started.</p>
+    </div>
+}

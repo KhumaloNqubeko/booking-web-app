@@ -1,0 +1,158 @@
+@model SearchResultsViewModel
+@{
+    ViewData["Title"] = "Explore";
+}
+
+<section class="page-header">
+    <div>
+        <p class="eyebrow">Unified search</p>
+        <h1>Browse venues, events, and bookings from one search studio.</h1>
+    </div>
+</section>
+
+<section class="panel filter-panel">
+    <form method="get" asp-controller="Explore" asp-action="Index" class="search-bar search-bar-wide search-bar-matrix">
+        <input type="search" name="query" value="@Model.Query" placeholder="Search by venue, event, location, or status" />
+        <select name="scope">
+            <option value="All" selected="@(Model.Scope == "All" ? "selected" : null)">Everything</option>
+            <option value="Venues" selected="@(Model.Scope == "Venues" ? "selected" : null)">Venues</option>
+            <option value="Events" selected="@(Model.Scope == "Events" ? "selected" : null)">Events</option>
+            <option value="Bookings" selected="@(Model.Scope == "Bookings" ? "selected" : null)">Bookings</option>
+        </select>
+        <select name="bookingStatus">
+            <option value="">All booking statuses</option>
+            <option value="Pending" selected="@(Model.BookingStatus == "Pending" ? "selected" : null)">Pending</option>
+            <option value="Confirmed" selected="@(Model.BookingStatus == "Confirmed" ? "selected" : null)">Confirmed</option>
+            <option value="Cancelled" selected="@(Model.BookingStatus == "Cancelled" ? "selected" : null)">Cancelled</option>
+        </select>
+        <input type="date" name="dateFrom" value="@Model.DateFrom?.ToString("yyyy-MM-dd")" />
+        <input type="date" name="dateTo" value="@Model.DateTo?.ToString("yyyy-MM-dd")" />
+        <button type="submit" class="button-primary">Search</button>
+        <a class="button-secondary" asp-controller="Explore" asp-action="Index">Clear</a>
+    </form>
+</section>
+
+<section class="feature-grid">
+    <article class="feature-card">
+        <p class="eyebrow">Venues</p>
+        <h2>@Model.Venues.Count result(s)</h2>
+        <p>Search by venue name or location.</p>
+    </article>
+    <article class="feature-card">
+        <p class="eyebrow">Events</p>
+        <h2>@Model.Events.Count result(s)</h2>
+        <p>Search by event title, description, or date range.</p>
+    </article>
+    <article class="feature-card">
+        <p class="eyebrow">Bookings</p>
+        <h2>@Model.Bookings.Count result(s)</h2>
+        <p>Search by venue, event, status, or booking date.</p>
+    </article>
+</section>
+
+@if (Model.Scope is "All" or "Venues")
+{
+    <section class="panel">
+        <div class="panel-heading">
+            <div>
+                <p class="eyebrow">Venue matches</p>
+                <h2>Spaces</h2>
+            </div>
+        </div>
+        @if (Model.Venues.Any())
+        {
+            <div class="stack-list">
+                @foreach (var venue in Model.Venues)
+                {
+                    <article class="stack-item">
+                        <div>
+                            <h3>@venue.Name</h3>
+                            <p>@venue.Location - Capacity @venue.Capacity - Bookings @venue.BookingCount</p>
+                        </div>
+                        <a class="chip-link" asp-controller="VenuesPage" asp-action="Details" asp-route-id="@venue.Id">Open</a>
+                    </article>
+                }
+            </div>
+        }
+        else
+        {
+            <div class="empty-state">
+                <h3>No venue matches</h3>
+                <p>Try a different venue name or location.</p>
+            </div>
+        }
+    </section>
+}
+
+@if (Model.Scope is "All" or "Events")
+{
+    <section class="panel">
+        <div class="panel-heading">
+            <div>
+                <p class="eyebrow">Event matches</p>
+                <h2>Programmes</h2>
+            </div>
+        </div>
+        @if (Model.Events.Any())
+        {
+            <div class="stack-list">
+                @foreach (var evnt in Model.Events)
+                {
+                    <article class="stack-item">
+                        <div>
+                            <h3>@evnt.Name</h3>
+                            <p>@evnt.StartDateTime.ToString("dd MMM yyyy HH:mm") - @evnt.Description</p>
+                        </div>
+                        <a class="chip-link" asp-controller="EventsPage" asp-action="Details" asp-route-id="@evnt.Id">Open</a>
+                    </article>
+                }
+            </div>
+        }
+        else
+        {
+            <div class="empty-state">
+                <h3>No event matches</h3>
+                <p>Try a different title, description, or date range.</p>
+            </div>
+        }
+    </section>
+}
+
+@if (Model.Scope is "All" or "Bookings")
+{
+    <section class="panel">
+        <div class="panel-heading">
+            <div>
+                <p class="eyebrow">Booking matches</p>
+                <h2>Reservations</h2>
+            </div>
+        </div>
+        @if (Model.Bookings.Any())
+        {
+            <div class="booking-board">
+                @foreach (var booking in Model.Bookings)
+                {
+                    <article class="booking-card">
+                        <div>
+                            <p class="eyebrow">Booking date</p>
+                            <h3>@booking.BookingDate.ToString("dd MMM yyyy")</h3>
+                            <p>@booking.EventName</p>
+                            <p>@booking.VenueName</p>
+                        </div>
+                        <div class="booking-card-meta">
+                            <span class="status-pill status-@booking.Status.ToLowerInvariant()">@booking.Status</span>
+                            <a class="chip-link" asp-controller="BookingsPage" asp-action="Details" asp-route-id="@booking.Id">Open</a>
+                        </div>
+                    </article>
+                }
+            </div>
+        }
+        else
+        {
+            <div class="empty-state">
+                <h3>No booking matches</h3>
+                <p>Try a different venue, event, status, or date filter.</p>
+            </div>
+        }
+    </section>
+}

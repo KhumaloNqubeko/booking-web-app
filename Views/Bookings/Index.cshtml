@@ -1,0 +1,82 @@
+@model BookingBoardViewModel
+@{
+    ViewData["Title"] = "Bookings";
+}
+
+<section class="page-header">
+    <div>
+        <p class="eyebrow">Booking board</p>
+        <h1>Track every reservation in one filtered board.</h1>
+    </div>
+    <div class="page-actions">
+        <a class="button-primary" asp-controller="BookingsPage" asp-action="Create">Create Booking</a>
+    </div>
+</section>
+
+<section class="stats-grid">
+    <article class="stat-card">
+        <span class="stat-label">All bookings</span>
+        <strong>@Model.TotalCount</strong>
+        <p>Matching your current filters.</p>
+    </article>
+    <article class="stat-card">
+        <span class="stat-label">Confirmed</span>
+        <strong>@Model.ConfirmedCount</strong>
+        <p>Locked in and ready.</p>
+    </article>
+    <article class="stat-card">
+        <span class="stat-label">Pending</span>
+        <strong>@Model.PendingCount</strong>
+        <p>Still awaiting final confirmation.</p>
+    </article>
+</section>
+
+<section class="panel filter-panel">
+    <form method="get" asp-controller="BookingsPage" asp-action="Index" class="search-bar search-bar-wide search-bar-matrix">
+        <input type="search" name="searchTerm" value="@Model.SearchTerm" placeholder="Search by venue, event, or status" />
+        <select name="status">
+            <option value="">All statuses</option>
+            <option value="Pending" selected="@(Model.Status == "Pending" ? "selected" : null)">Pending</option>
+            <option value="Confirmed" selected="@(Model.Status == "Confirmed" ? "selected" : null)">Confirmed</option>
+            <option value="Cancelled" selected="@(Model.Status == "Cancelled" ? "selected" : null)">Cancelled</option>
+        </select>
+        <input type="date" name="dateFrom" value="@Model.DateFrom?.ToString("yyyy-MM-dd")" />
+        <input type="date" name="dateTo" value="@Model.DateTo?.ToString("yyyy-MM-dd")" />
+        <button type="submit" class="button-primary">Filter</button>
+        <a class="button-secondary" asp-controller="BookingsPage" asp-action="Index">Clear</a>
+    </form>
+</section>
+
+@if (Model.Bookings.Any())
+{
+    <section class="panel">
+        <div class="booking-board">
+            @foreach (var booking in Model.Bookings)
+            {
+                <article class="booking-card">
+                    <div>
+                        <p class="eyebrow">Booking date</p>
+                        <h3>@booking.BookingDate.ToString("dd MMM yyyy")</h3>
+                        <p>@booking.EventName</p>
+                        <p>@booking.VenueName</p>
+                    </div>
+                    <div class="booking-card-meta">
+                        <span class="status-pill status-@booking.Status.ToLowerInvariant()">@booking.Status</span>
+                        <div class="actions-cell">
+                            <a class="chip-link" asp-controller="BookingsPage" asp-action="Details" asp-route-id="@booking.Id">Details</a>
+                            <a class="chip-link" asp-controller="BookingsPage" asp-action="Edit" asp-route-id="@booking.Id">Edit</a>
+                            <a class="chip-link" asp-controller="BookingsPage" asp-action="Delete" asp-route-id="@booking.Id">Delete</a>
+                        </div>
+                    </div>
+                </article>
+            }
+        </div>
+    </section>
+}
+else
+{
+    <div class="empty-state">
+        <h3>No bookings matched your filters</h3>
+        <p>Widen the search, clear the filters, or create a new booking.</p>
+    </div>
+}

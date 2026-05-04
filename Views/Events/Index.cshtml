@@ -1,0 +1,61 @@
+@model EventDirectoryViewModel
+@{
+    ViewData["Title"] = "Events";
+}
+
+<section class="page-header">
+    <div>
+        <p class="eyebrow">Event planning</p>
+        <h1>Search your programme and spot what is bookable fast.</h1>
+    </div>
+    <div class="page-actions">
+        <a class="button-primary" asp-controller="EventsPage" asp-action="Create">Add Event</a>
+    </div>
+</section>
+
+<section class="panel filter-panel">
+    <form method="get" asp-controller="EventsPage" asp-action="Index" class="search-bar search-bar-wide">
+        <input type="search" name="searchTerm" value="@Model.SearchTerm" placeholder="Search events by name or description" />
+        <input type="date" name="startFrom" value="@Model.StartFrom?.ToString("yyyy-MM-dd")" />
+        <button type="submit" class="button-primary">Search</button>
+        <a class="button-secondary" asp-controller="EventsPage" asp-action="Index">Clear</a>
+    </form>
+</section>
+
+@if (Model.Events.Any())
+{
+    <section class="showcase-grid">
+        @foreach (var evnt in Model.Events)
+        {
+            <article class="showcase-card event-showcase-card">
+                @if (!string.IsNullOrWhiteSpace(evnt.ImageUrl))
+                {
+                    <img class="showcase-art" src="@evnt.ImageUrl" alt="@evnt.Name" />
+                }
+                else
+                {
+                    <div class="showcase-art"></div>
+                }
+
+                <div class="showcase-copy event-showcase-copy">
+                    <span class="section-badge">@evnt.StartDateTime.ToString("dd MMM") - @evnt.EndDateTime.ToString("dd MMM")</span>
+                    <h2>@evnt.Name</h2>
+                    <p>@evnt.Description</p>
+                    <p style="margin-top: 0.5rem;">Bookings: @evnt.BookingCount</p>
+                    <div class="event-card-actions">
+                        <a class="event-action event-action-primary" asp-controller="EventsPage" asp-action="Details" asp-route-id="@evnt.Id">Details</a>
+                        <a class="event-action event-action-secondary" asp-controller="EventsPage" asp-action="Edit" asp-route-id="@evnt.Id">Edit</a>
+                        <a class="event-action event-action-danger" asp-controller="EventsPage" asp-action="Delete" asp-route-id="@evnt.Id">Delete</a>
+                    </div>
+                </div>
+            </article>
+        }
+    </section>
+}
+else
+{
+    <div class="empty-state">
+        <h3>No events matched your search</h3>
+        <p>Try a different title, description, or date filter.</p>
+    </div>
+}

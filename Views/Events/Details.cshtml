@@ -1,0 +1,80 @@
+@model EventDetailsViewModel
+@{
+    ViewData["Title"] = "Event Details";
+}
+
+<section class="detail-shell">
+    <div class="detail-header">
+        <div>
+            <p class="eyebrow">Event details</p>
+            <h1>@Model.Name</h1>
+        </div>
+        <div class="button-row">
+            <a class="button-secondary" asp-controller="EventsPage" asp-action="Edit" asp-route-id="@Model.Id">Edit</a>
+            <a class="button-secondary" asp-controller="EventsPage" asp-action="Index">Back</a>
+        </div>
+    </div>
+
+    <div class="detail-grid">
+        <div>
+            @if (!string.IsNullOrWhiteSpace(Model.ImageUrl))
+            {
+                <img class="image-preview" src="@Model.ImageUrl" alt="@Model.Name" />
+            }
+            else
+            {
+                <div class="image-preview"></div>
+            }
+        </div>
+        <div class="meta-grid">
+            <article class="meta-card">
+                <span class="eyebrow">Start</span>
+                <strong>@Model.StartDateTime.ToString("dd MMM yyyy HH:mm")</strong>
+            </article>
+            <article class="meta-card">
+                <span class="eyebrow">End</span>
+                <strong>@Model.EndDateTime.ToString("dd MMM yyyy HH:mm")</strong>
+            </article>
+            <article class="meta-card">
+                <span class="eyebrow">Linked bookings</span>
+                <strong>@Model.BookingCount</strong>
+            </article>
+            <article class="meta-card">
+                <span class="eyebrow">Summary</span>
+                <strong>@Model.Description</strong>
+            </article>
+        </div>
+    </div>
+
+    <section class="panel" style="margin-top: 1.4rem;">
+        <div class="panel-heading">
+            <div>
+                <p class="eyebrow">Booking snapshot</p>
+                <h2>Recent bookings for this event</h2>
+            </div>
+        </div>
+
+        @if (Model.RelatedBookings.Any())
+        {
+            <div class="stack-list">
+                @foreach (var booking in Model.RelatedBookings)
+                {
+                    <article class="stack-item">
+                        <div>
+                            <h3>@booking.VenueName</h3>
+                            <p>@booking.BookingDate.ToString("dd MMM yyyy")</p>
+                        </div>
+                        <span class="status-pill status-@booking.Status.ToLowerInvariant()">@booking.Status</span>
+                    </article>
+                }
+            </div>
+        }
+        else
+        {
+            <div class="empty-state">
+                <h3>No bookings linked yet</h3>
+                <p>This event is ready to be scheduled into new bookings.</p>
+            </div>
+        }
+    </section>
+</section>

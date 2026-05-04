@@ -1,0 +1,40 @@
+@model BookingDetailsViewModel
+@{
+    ViewData["Title"] = "Delete Booking";
+}
+
+<section class="delete-shell">
+    <div class="delete-header">
+        <div>
+            <p class="eyebrow">Delete booking</p>
+            <h1>Review before removing this reservation.</h1>
+        </div>
+        <a class="button-secondary" asp-controller="BookingsPage" asp-action="Index">Back to board</a>
+    </div>
+
+    <div class="detail-grid">
+        <article class="detail-card">
+            <span class="eyebrow">Venue</span>
+            <strong>@Model.VenueName</strong>
+        </article>
+        <article class="detail-card">
+            <span class="eyebrow">Event</span>
+            <strong>@Model.EventName</strong>
+        </article>
+        <article class="detail-card">
+            <span class="eyebrow">Booking date</span>
+            <strong>@Model.BookingDate.ToString("dd MMM yyyy")</strong>
+        </article>
+        <article class="detail-card">
+            <span class="eyebrow">Status</span>
+            <strong>@Model.Status</strong>
+        </article>
+    </div>
+
+    <form asp-controller="BookingsPage" asp-action="DeleteConfirmed" asp-route-id="@Model.Id" method="post" style="margin-top: 1.2rem;">
+        <div class="button-row">
+            <button type="submit" class="button-danger">Delete Booking</button>
+            <a class="button-secondary" asp-controller="BookingsPage" asp-action="Details" asp-route-id="@Model.Id">Cancel</a>
+        </div>
+    </form>
+</section>

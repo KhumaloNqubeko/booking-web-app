@@ -1,0 +1,41 @@
+@model EventDetailsViewModel
+@{
+    ViewData["Title"] = "Delete Event";
+}
+
+<section class="delete-shell">
+    <div class="delete-header">
+        <div>
+            <p class="eyebrow">Delete event</p>
+            <h1>Review before removing @Model.Name.</h1>
+        </div>
+        <a class="button-secondary" asp-controller="EventsPage" asp-action="Index">Back to list</a>
+    </div>
+
+    @if (!string.IsNullOrWhiteSpace(Model.ImageUrl))
+    {
+        <img class="image-preview image-preview-compact" src="@Model.ImageUrl" alt="@Model.Name" />
+    }
+
+    <div class="detail-grid" style="margin-top: 1rem;">
+        <article class="detail-card">
+            <span class="eyebrow">Start</span>
+            <strong>@Model.StartDateTime.ToString("dd MMM yyyy HH:mm")</strong>
+        </article>
+        <article class="detail-card">
+            <span class="eyebrow">End</span>
+            <strong>@Model.EndDateTime.ToString("dd MMM yyyy HH:mm")</strong>
+        </article>
+        <article class="detail-card">
+            <span class="eyebrow">Linked bookings</span>
+            <strong>@Model.BookingCount</strong>
+        </article>
+    </div>
+
+    <form asp-controller="EventsPage" asp-action="DeleteConfirmed" asp-route-id="@Model.Id" method="post" style="margin-top: 1.2rem;">
+        <div class="button-row">
+            <button type="submit" class="button-danger">Delete Event</button>
+            <a class="button-secondary" asp-controller="EventsPage" asp-action="Details" asp-route-id="@Model.Id">Cancel</a>
+        </div>
+    </form>
+</section>
