@@ -32,13 +32,34 @@
 </section>
 
 <section class="panel filter-panel">
-    <form method="get" asp-controller="BookingsPage" asp-action="Index" class="search-bar search-bar-wide search-bar-matrix">
-        <input type="search" name="searchTerm" value="@Model.SearchTerm" placeholder="Search by venue, event, or status" />
+    <form method="get" asp-controller="BookingsPage" asp-action="Index" class="search-bar search-bar-bookings">
+        <input type="search" name="searchTerm" value="@Model.SearchTerm" placeholder="Search by venue, event, type, or status" />
         <select name="status">
             <option value="">All statuses</option>
             <option value="Pending" selected="@(Model.Status == "Pending" ? "selected" : null)">Pending</option>
             <option value="Confirmed" selected="@(Model.Status == "Confirmed" ? "selected" : null)">Confirmed</option>
             <option value="Cancelled" selected="@(Model.Status == "Cancelled" ? "selected" : null)">Cancelled</option>
+        </select>
+        <select name="venueId">
+            <option value="">All venues</option>
+            @foreach (var option in Model.VenueOptions)
+            {
+                <option value="@option.Value" selected="@(Model.VenueId?.ToString() == option.Value ? "selected" : null)">@option.Text</option>
+            }
+        </select>
+        <select name="eventTypeId">
+            <option value="">All event types</option>
+            @foreach (var option in Model.EventTypeOptions)
+            {
+                <option value="@option.Value" selected="@(Model.EventTypeId?.ToString() == option.Value ? "selected" : null)">@option.Text</option>
+            }
+        </select>
+        <select name="venueAvailability">
+            <option value="">Any venue availability</option>
+            @foreach (var option in Model.VenueAvailabilityOptions)
+            {
+                <option value="@option.Value" selected="@(Model.VenueAvailability == option.Value ? "selected" : null)">@option.Text</option>
+            }
         </select>
         <input type="date" name="dateFrom" value="@Model.DateFrom?.ToString("yyyy-MM-dd")" />
         <input type="date" name="dateTo" value="@Model.DateTo?.ToString("yyyy-MM-dd")" />
@@ -58,7 +79,8 @@
                         <p class="eyebrow">Booking date</p>
                         <h3>@booking.BookingDate.ToString("dd MMM yyyy")</h3>
                         <p>@booking.EventName</p>
-                        <p>@booking.VenueName</p>
+                        <p>@booking.EventTypeName at @booking.VenueName</p>
+                        <p>@booking.VenueAvailability</p>
                     </div>
                     <div class="booking-card-meta">
                         <span class="status-pill status-@booking.Status.ToLowerInvariant()">@booking.Status</span>

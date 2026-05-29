@@ -1,9 +1,11 @@
 using Azure;
 using Booking_webapp.Data;
+using Booking_webapp.Models;
 using Booking_webapp.Models.Entities;
 using Booking_webapp.Models.ViewModels;
 using Booking_webapp.Services;
 using Microsoft.AspNetCore.Mvc;
+using Microsoft.AspNetCore.Mvc.Rendering;
 using Microsoft.EntityFrameworkCore;
 
 namespace Booking_webapp.Controllers
@@ -24,21 +26,62 @@ namespace Booking_webapp.Controllers
         }
 
         [HttpGet("")]
-        public async Task<IActionResult> Index(string? searchTerm = null, DateTime? startFrom = null)
+        public async Task<IActionResult> Index(
+            string? searchTerm = null,
+            int? eventTypeId = null,
+            Guid? venueId = null,
+            string? venueAvailability = null,
+            DateTime? dateFrom = null,
+            DateTime? dateTo = null)
         {
-            var eventQuery = _context.Events.AsNoTracking();
+            var eventQuery =
+                from evnt in _context.Events.AsNoTracking()
+                join eventType in _context.EventTypes.AsNoTracking() on evnt.EventTypeId equals eventType.Id into eventTypeJoin
+                from eventType in eventTypeJoin.DefaultIfEmpty()
+                select new
+                {
+                    Event = evnt,
+                    EventTypeName = eventType != null ? eventType.Name : "Unknown type"
+                };
 
             if (!string.IsNullOrWhiteSpace(searchTerm))
             {
-                var term = searchTerm.Trim();
+                var term = searchTerm.Trim().ToLower();
                 eventQuery = eventQuery.Where(e =>
-                    EF.Functions.ILike(e.Name, $"%{term}%") ||
-                    EF.Functions.ILike(e.Description, $"%{term}%"));
+                    e.Event.Name.ToLower().Contains(term) ||
+                    e.Event.Description.ToLower().Contains(term) ||
+                    e.EventTypeName.ToLower().Contains(term));
             }
 
-            if (startFrom.HasValue)
+            if (eventTypeId.HasValue)
             {
-                eventQuery = eventQuery.Where(e => e.StartDateTime.Date >= startFrom.Value.Date);
+                eventQuery = eventQuery.Where(e => e.Event.EventTypeId == eventTypeId.Value);
+            }
+
+            if (dateFrom.HasValue)
+            {
+                eventQuery = eventQuery.Where(e => e.Event.StartDateTime.Date >= dateFrom.Value.Date);
+            }
+
+            if (dateTo.HasValue)
+            {
+                eventQuery = eventQuery.Where(e => e.Event.EndDateTime.Date <= dateTo.Value.Date);
+            }
+
+            if (venueId.HasValue)
+            {
+                eventQuery = eventQuery.Where(e =>
+                    _context.Bookings.Any(b => b.EventId == e.Event.Id && b.VenueId == venueId.Value));
+            }
+
+            if (!string.IsNullOrWhiteSpace(venueAvailability))
+            {
+                eventQuery = eventQuery.Where(e =>
+                    (from booking in _context.Bookings
+                     join venue in _context.Venues on booking.VenueId equals venue.Id
+                     where booking.EventId == e.Event.Id
+                     select venue.Availability)
+                    .Any(availability => availability == venueAvailability));
             }
 
             var bookingCounts = await _context.Bookings
@@ -48,15 +91,16 @@ namespace Booking_webapp.Controllers
                 .ToDictionaryAsync(item => item.Key, item => item.Count);
 
             var events = await eventQuery
-                .OrderBy(e => e.StartDateTime)
-                .Select(evnt => new EventListItemViewModel
+                .OrderBy(e => e.Event.StartDateTime)
+                .Select(e => new EventListItemViewModel
                 {
-                    Id = evnt.Id,
-                    Name = evnt.Name,
-                    Description = evnt.Description,
-                    ImageUrl = evnt.ImageUrl,
-                    StartDateTime = evnt.StartDateTime,
-                    EndDateTime = evnt.EndDateTime
+                    Id = e.Event.Id,
+                    Name = e.Event.Name,
+                    Description = e.Event.Description,
+                    ImageUrl = e.Event.ImageUrl,
+                    EventTypeName = e.EventTypeName,
+                    StartDateTime = e.Event.StartDateTime,
+                    EndDateTime = e.Event.EndDateTime
                 })
                 .ToListAsync();
 
@@ -66,18 +110,27 @@ namespace Booking_webapp.Controllers
                 evnt.ImageUrl = ResolveEventImageUrl(evnt.ImageUrl);
             }
 
-            return View("~/Views/Events/Index.cshtml", new EventDirectoryViewModel
+            var model = new EventDirectoryViewModel
             {
                 SearchTerm = searchTerm,
-                StartFrom = startFrom,
+                EventTypeId = eventTypeId,
+                VenueId = venueId,
+                VenueAvailability = venueAvailability,
+                DateFrom = dateFrom,
+                DateTo = dateTo,
                 Events = events
-            });
+            };
+
+            await PopulateEventFilterSelectionsAsync(model);
+            return View("~/Views/Events/Index.cshtml", model);
         }
 
         [HttpGet("Create")]
-        public IActionResult Create()
+        public async Task<IActionResult> Create()
         {
-            return View("~/Views/Events/Create.cshtml", new EventFormViewModel());
+            var model = new EventFormViewModel();
+            await PopulateEventTypeOptionsAsync(model);
+            return View("~/Views/Events/Create.cshtml", model);
         }
 
         [HttpPost("Create")]
@@ -86,9 +139,11 @@ namespace Booking_webapp.Controllers
         {
             ValidateEventDates(model);
             ValidateImage(model.ImageFile, nameof(model.ImageFile));
+            await ValidateEventTypeAsync(model.EventTypeId);
 
             if (!ModelState.IsValid)
             {
+                await PopulateEventTypeOptionsAsync(model);
                 return View("~/Views/Events/Create.cshtml", model);
             }
 
@@ -97,6 +152,7 @@ namespace Booking_webapp.Controllers
                 Id = Guid.NewGuid(),
                 Name = model.Name,
                 Description = model.Description,
+                EventTypeId = model.EventTypeId,
                 StartDateTime = model.StartDateTime,
                 EndDateTime = model.EndDateTime
             };
@@ -111,11 +167,13 @@ namespace Booking_webapp.Controllers
             catch (InvalidOperationException ex)
             {
                 ModelState.AddModelError(string.Empty, ex.Message);
+                await PopulateEventTypeOptionsAsync(model);
                 return View("~/Views/Events/Create.cshtml", model);
             }
             catch (RequestFailedException)
             {
                 ModelState.AddModelError(string.Empty, "The event image could not be uploaded right now. Please try again.");
+                await PopulateEventTypeOptionsAsync(model);
                 return View("~/Views/Events/Create.cshtml", model);
             }
 
@@ -129,7 +187,17 @@ namespace Booking_webapp.Controllers
         [HttpGet("Details/{id:guid}")]
         public async Task<IActionResult> Details(Guid id)
         {
-            var evnt = await _context.Events.AsNoTracking().FirstOrDefaultAsync(e => e.Id == id);
+            var evnt = await (
+                from item in _context.Events.AsNoTracking()
+                join eventType in _context.EventTypes.AsNoTracking() on item.EventTypeId equals eventType.Id into eventTypeJoin
+                from eventType in eventTypeJoin.DefaultIfEmpty()
+                where item.Id == id
+                select new
+                {
+                    Event = item,
+                    EventTypeName = eventType != null ? eventType.Name : "Unknown type"
+                })
+                .FirstOrDefaultAsync();
 
             if (evnt == null)
             {
@@ -147,6 +215,7 @@ namespace Booking_webapp.Controllers
                 {
                     Id = booking.Id,
                     VenueName = venue != null ? venue.Name : "Unknown venue",
+                    VenueAvailability = venue != null ? venue.Availability : VenueAvailabilityCatalog.Unavailable,
                     BookingDate = booking.BookingDate,
                     Status = booking.Status
                 })
@@ -155,12 +224,13 @@ namespace Booking_webapp.Controllers
 
             var model = new EventDetailsViewModel
             {
-                Id = evnt.Id,
-                Name = evnt.Name,
-                Description = evnt.Description,
-                ImageUrl = ResolveEventImageUrl(evnt.ImageUrl),
-                StartDateTime = evnt.StartDateTime,
-                EndDateTime = evnt.EndDateTime,
+                Id = evnt.Event.Id,
+                Name = evnt.Event.Name,
+                Description = evnt.Event.Description,
+                ImageUrl = ResolveEventImageUrl(evnt.Event.ImageUrl),
+                EventTypeName = evnt.EventTypeName,
+                StartDateTime = evnt.Event.StartDateTime,
+                EndDateTime = evnt.Event.EndDateTime,
                 BookingCount = await _context.Bookings.CountAsync(b => b.EventId == id),
                 RelatedBookings = relatedBookings
             };
@@ -179,15 +249,19 @@ namespace Booking_webapp.Controllers
                 return RedirectToAction(nameof(Index));
             }
 
-            return View("~/Views/Events/Edit.cshtml", new EventFormViewModel
+            var model = new EventFormViewModel
             {
                 Id = evnt.Id,
                 Name = evnt.Name,
                 Description = evnt.Description,
+                EventTypeId = evnt.EventTypeId,
                 ImageUrl = ResolveEventImageUrl(evnt.ImageUrl),
                 StartDateTime = evnt.StartDateTime,
                 EndDateTime = evnt.EndDateTime
-            });
+            };
+
+            await PopulateEventTypeOptionsAsync(model);
+            return View("~/Views/Events/Edit.cshtml", model);
         }
 
         [HttpPost("Edit/{id:guid}")]
@@ -201,10 +275,12 @@ namespace Booking_webapp.Controllers
 
             ValidateEventDates(model);
             ValidateImage(model.ImageFile, nameof(model.ImageFile));
+            await ValidateEventTypeAsync(model.EventTypeId);
 
             if (!ModelState.IsValid)
             {
                 model.ImageUrl = ResolveEventImageUrl(model.ImageUrl);
+                await PopulateEventTypeOptionsAsync(model);
                 return View("~/Views/Events/Edit.cshtml", model);
             }
 
@@ -220,6 +296,7 @@ namespace Booking_webapp.Controllers
 
             evnt.Name = model.Name;
             evnt.Description = model.Description;
+            evnt.EventTypeId = model.EventTypeId;
             evnt.StartDateTime = model.StartDateTime;
             evnt.EndDateTime = model.EndDateTime;
 
@@ -234,12 +311,14 @@ namespace Booking_webapp.Controllers
             {
                 ModelState.AddModelError(string.Empty, ex.Message);
                 model.ImageUrl = ResolveEventImageUrl(previousImage);
+                await PopulateEventTypeOptionsAsync(model);
                 return View("~/Views/Events/Edit.cshtml", model);
             }
             catch (RequestFailedException)
             {
                 ModelState.AddModelError(string.Empty, "The event image could not be uploaded right now. Please try again.");
                 model.ImageUrl = ResolveEventImageUrl(previousImage);
+                await PopulateEventTypeOptionsAsync(model);
                 return View("~/Views/Events/Edit.cshtml", model);
             }
 
@@ -257,7 +336,17 @@ namespace Booking_webapp.Controllers
         [HttpGet("Delete/{id:guid}")]
         public async Task<IActionResult> Delete(Guid id)
         {
-            var evnt = await _context.Events.AsNoTracking().FirstOrDefaultAsync(e => e.Id == id);
+            var evnt = await (
+                from item in _context.Events.AsNoTracking()
+                join eventType in _context.EventTypes.AsNoTracking() on item.EventTypeId equals eventType.Id into eventTypeJoin
+                from eventType in eventTypeJoin.DefaultIfEmpty()
+                where item.Id == id
+                select new
+                {
+                    Event = item,
+                    EventTypeName = eventType != null ? eventType.Name : "Unknown type"
+                })
+                .FirstOrDefaultAsync();
 
             if (evnt == null)
             {
@@ -267,12 +356,13 @@ namespace Booking_webapp.Controllers
 
             return View("~/Views/Events/Delete.cshtml", new EventDetailsViewModel
             {
-                Id = evnt.Id,
-                Name = evnt.Name,
-                Description = evnt.Description,
-                ImageUrl = ResolveEventImageUrl(evnt.ImageUrl),
-                StartDateTime = evnt.StartDateTime,
-                EndDateTime = evnt.EndDateTime,
+                Id = evnt.Event.Id,
+                Name = evnt.Event.Name,
+                Description = evnt.Event.Description,
+                ImageUrl = ResolveEventImageUrl(evnt.Event.ImageUrl),
+                EventTypeName = evnt.EventTypeName,
+                StartDateTime = evnt.Event.StartDateTime,
+                EndDateTime = evnt.Event.EndDateTime,
                 BookingCount = await _context.Bookings.CountAsync(b => b.EventId == id)
             });
         }
@@ -314,6 +404,14 @@ namespace Booking_webapp.Controllers
             }
         }
 
+        private async Task ValidateEventTypeAsync(int eventTypeId)
+        {
+            if (!await _context.EventTypes.AnyAsync(eventType => eventType.Id == eventTypeId))
+            {
+                ModelState.AddModelError(nameof(EventFormViewModel.EventTypeId), "Please select a valid event type.");
+            }
+        }
+
         private void ValidateImage(IFormFile? imageFile, string modelKey)
         {
             if (imageFile == null || imageFile.Length == 0)
@@ -330,6 +428,50 @@ namespace Booking_webapp.Controllers
             {
                 ModelState.AddModelError(modelKey, "Please upload a JPG, PNG, WEBP, or GIF image.");
             }
+        }
+
+        private async Task PopulateEventTypeOptionsAsync(EventFormViewModel model)
+        {
+            model.EventTypeOptions = await _context.EventTypes
+                .AsNoTracking()
+                .OrderBy(eventType => eventType.Name)
+                .Select(eventType => new SelectListItem
+                {
+                    Value = eventType.Id.ToString(),
+                    Text = eventType.Name
+                })
+                .ToListAsync();
+        }
+
+        private async Task PopulateEventFilterSelectionsAsync(EventDirectoryViewModel model)
+        {
+            model.EventTypeOptions = await _context.EventTypes
+                .AsNoTracking()
+                .OrderBy(eventType => eventType.Name)
+                .Select(eventType => new SelectListItem
+                {
+                    Value = eventType.Id.ToString(),
+                    Text = eventType.Name
+                })
+                .ToListAsync();
+
+            model.VenueOptions = await _context.Venues
+                .AsNoTracking()
+                .OrderBy(venue => venue.Name)
+                .Select(venue => new SelectListItem
+                {
+                    Value = venue.Id.ToString(),
+                    Text = $"{venue.Name} - {venue.Location}"
+                })
+                .ToListAsync();
+
+            model.VenueAvailabilityOptions = VenueAvailabilityCatalog.All
+                .Select(availability => new SelectListItem
+                {
+                    Value = availability,
+                    Text = availability
+                })
+                .ToList();
         }
 
         private string? ResolveEventImageUrl(string? storedImage)

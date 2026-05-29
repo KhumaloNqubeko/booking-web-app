@@ -33,6 +33,11 @@
             <span asp-validation-for="Capacity"></span>
         </div>
         <div class="field">
+            <label asp-for="Availability"></label>
+            <select asp-for="Availability" asp-items="Model.AvailabilityOptions"></select>
+            <span asp-validation-for="Availability"></span>
+        </div>
+        <div class="field">
             <label asp-for="ImageFile"></label>
             <input asp-for="ImageFile" type="file" accept=".jpg,.jpeg,.png,.webp,.gif" />
             <span asp-validation-for="ImageFile"></span>

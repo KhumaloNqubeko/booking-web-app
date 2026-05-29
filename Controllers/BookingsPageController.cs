@@ -1,4 +1,5 @@
 using Booking_webapp.Data;
+using Booking_webapp.Models;
 using Booking_webapp.Models.Entities;
 using Booking_webapp.Models.ViewModels;
 using Microsoft.AspNetCore.Mvc;
@@ -21,36 +22,59 @@ namespace Booking_webapp.Controllers
         public async Task<IActionResult> Index(
             string? searchTerm = null,
             string? status = null,
+            Guid? venueId = null,
+            int? eventTypeId = null,
+            string? venueAvailability = null,
             DateTime? dateFrom = null,
             DateTime? dateTo = null)
         {
             var bookingQuery =
                 from booking in _context.Bookings.AsNoTracking()
-                join venue in _context.Venues.AsNoTracking() on booking.VenueId equals venue.Id into venueJoin
-                from venue in venueJoin.DefaultIfEmpty()
-                join evnt in _context.Events.AsNoTracking() on booking.EventId equals evnt.Id into eventJoin
-                from evnt in eventJoin.DefaultIfEmpty()
-                select new BookingListItemViewModel
+                join venue in _context.Venues.AsNoTracking() on booking.VenueId equals venue.Id
+                join evnt in _context.Events.AsNoTracking() on booking.EventId equals evnt.Id
+                join eventType in _context.EventTypes.AsNoTracking() on evnt.EventTypeId equals eventType.Id
+                select new
                 {
                     Id = booking.Id,
-                    VenueName = venue != null ? venue.Name : "Unknown venue",
-                    EventName = evnt != null ? evnt.Name : "Unknown event",
+                    VenueId = booking.VenueId,
+                    EventId = booking.EventId,
+                    VenueName = venue.Name,
+                    EventName = evnt.Name,
+                    EventTypeId = evnt.EventTypeId,
+                    EventTypeName = eventType.Name,
+                    VenueAvailability = venue.Availability,
                     BookingDate = booking.BookingDate,
                     Status = booking.Status
                 };
 
             if (!string.IsNullOrWhiteSpace(searchTerm))
             {
-                var term = searchTerm.Trim();
+                var term = searchTerm.Trim().ToLower();
                 bookingQuery = bookingQuery.Where(b =>
-                    EF.Functions.ILike(b.VenueName, $"%{term}%") ||
-                    EF.Functions.ILike(b.EventName, $"%{term}%") ||
-                    EF.Functions.ILike(b.Status, $"%{term}%"));
+                    b.VenueName.ToLower().Contains(term) ||
+                    b.EventName.ToLower().Contains(term) ||
+                    b.EventTypeName.ToLower().Contains(term) ||
+                    b.Status.ToLower().Contains(term));
             }
 
             if (!string.IsNullOrWhiteSpace(status))
             {
                 bookingQuery = bookingQuery.Where(b => b.Status == status);
+            }
+
+            if (venueId.HasValue)
+            {
+                bookingQuery = bookingQuery.Where(b => b.VenueId == venueId.Value);
+            }
+
+            if (eventTypeId.HasValue)
+            {
+                bookingQuery = bookingQuery.Where(b => b.EventTypeId == eventTypeId.Value);
+            }
+
+            if (!string.IsNullOrWhiteSpace(venueAvailability))
+            {
+                bookingQuery = bookingQuery.Where(b => b.VenueAvailability == venueAvailability);
             }
 
             if (dateFrom.HasValue)
@@ -65,12 +89,27 @@ namespace Booking_webapp.Controllers
 
             var bookings = await bookingQuery
                 .OrderByDescending(b => b.BookingDate)
+                .Select(b => new BookingListItemViewModel
+                {
+                    Id = b.Id,
+                    VenueId = b.VenueId,
+                    EventId = b.EventId,
+                    VenueName = b.VenueName,
+                    EventName = b.EventName,
+                    EventTypeName = b.EventTypeName,
+                    VenueAvailability = b.VenueAvailability,
+                    BookingDate = b.BookingDate,
+                    Status = b.Status
+                })
                 .ToListAsync();
 
             var model = new BookingBoardViewModel
             {
                 SearchTerm = searchTerm,
                 Status = status,
+                VenueId = venueId,
+                EventTypeId = eventTypeId,
+                VenueAvailability = venueAvailability,
                 DateFrom = dateFrom,
                 DateTo = dateTo,
                 TotalCount = bookings.Count,
@@ -80,6 +119,7 @@ namespace Booking_webapp.Controllers
                 Bookings = bookings
             };
 
+            await PopulateBookingFilterSelectionsAsync(model);
             return View("~/Views/Bookings/Index.cshtml", model);
         }
 
@@ -230,18 +270,19 @@ namespace Booking_webapp.Controllers
         {
             return await (
                 from booking in _context.Bookings.AsNoTracking()
-                join venue in _context.Venues.AsNoTracking() on booking.VenueId equals venue.Id into venueJoin
-                from venue in venueJoin.DefaultIfEmpty()
-                join evnt in _context.Events.AsNoTracking() on booking.EventId equals evnt.Id into eventJoin
-                from evnt in eventJoin.DefaultIfEmpty()
+                join venue in _context.Venues.AsNoTracking() on booking.VenueId equals venue.Id
+                join evnt in _context.Events.AsNoTracking() on booking.EventId equals evnt.Id
+                join eventType in _context.EventTypes.AsNoTracking() on evnt.EventTypeId equals eventType.Id
                 where booking.Id == id
                 select new BookingDetailsViewModel
                 {
                     Id = booking.Id,
                     VenueId = booking.VenueId,
                     EventId = booking.EventId,
-                    VenueName = venue != null ? venue.Name : "Unknown venue",
-                    EventName = evnt != null ? evnt.Name : "Unknown event",
+                    VenueName = venue.Name,
+                    EventName = evnt.Name,
+                    EventTypeName = eventType.Name,
+                    VenueAvailability = venue.Availability,
                     BookingDate = booking.BookingDate,
                     Status = booking.Status
                 })
@@ -256,17 +297,18 @@ namespace Booking_webapp.Controllers
                 .Select(v => new SelectListItem
                 {
                     Value = v.Id.ToString(),
-                    Text = $"{v.Name} - {v.Location}"
+                    Text = $"{v.Name} - {v.Location} ({v.Availability})"
                 })
                 .ToListAsync();
 
-            model.EventOptions = await _context.Events
-                .AsNoTracking()
-                .OrderBy(e => e.StartDateTime)
-                .Select(e => new SelectListItem
+            model.EventOptions = await (
+                from evnt in _context.Events.AsNoTracking()
+                join eventType in _context.EventTypes.AsNoTracking() on evnt.EventTypeId equals eventType.Id
+                orderby evnt.StartDateTime
+                select new SelectListItem
                 {
-                    Value = e.Id.ToString(),
-                    Text = $"{e.Name} - {e.StartDateTime:dd MMM yyyy}"
+                    Value = evnt.Id.ToString(),
+                    Text = $"{evnt.Name} - {eventType.Name} - {evnt.StartDateTime:dd MMM yyyy}"
                 })
                 .ToListAsync();
 
@@ -278,11 +320,48 @@ namespace Booking_webapp.Controllers
             };
         }
 
+        private async Task PopulateBookingFilterSelectionsAsync(BookingBoardViewModel model)
+        {
+            model.VenueOptions = await _context.Venues
+                .AsNoTracking()
+                .OrderBy(v => v.Name)
+                .Select(v => new SelectListItem
+                {
+                    Value = v.Id.ToString(),
+                    Text = $"{v.Name} - {v.Location}"
+                })
+                .ToListAsync();
+
+            model.EventTypeOptions = await _context.EventTypes
+                .AsNoTracking()
+                .OrderBy(eventType => eventType.Name)
+                .Select(eventType => new SelectListItem
+                {
+                    Value = eventType.Id.ToString(),
+                    Text = eventType.Name
+                })
+                .ToListAsync();
+
+            model.VenueAvailabilityOptions = VenueAvailabilityCatalog.All
+                .Select(availability => new SelectListItem
+                {
+                    Value = availability,
+                    Text = availability
+                })
+                .ToList();
+        }
+
         private async Task ValidateBookingAsync(BookingFormViewModel model, Guid? bookingIdToExclude = null)
         {
-            if (!await _context.Venues.AnyAsync(v => v.Id == model.VenueId))
+            var venue = await _context.Venues.AsNoTracking().FirstOrDefaultAsync(v => v.Id == model.VenueId);
+
+            if (venue == null)
             {
                 ModelState.AddModelError(nameof(model.VenueId), "Please select a valid venue.");
+            }
+            else if (venue.Availability != VenueAvailabilityCatalog.Available)
+            {
+                ModelState.AddModelError(nameof(model.VenueId), "Only venues marked as available can receive new bookings.");
             }
 
             if (!await _context.Events.AnyAsync(e => e.Id == model.EventId))

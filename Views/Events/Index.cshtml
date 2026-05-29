@@ -14,9 +14,31 @@
 </section>
 
 <section class="panel filter-panel">
-    <form method="get" asp-controller="EventsPage" asp-action="Index" class="search-bar search-bar-wide">
-        <input type="search" name="searchTerm" value="@Model.SearchTerm" placeholder="Search events by name or description" />
-        <input type="date" name="startFrom" value="@Model.StartFrom?.ToString("yyyy-MM-dd")" />
+    <form method="get" asp-controller="EventsPage" asp-action="Index" class="search-bar search-bar-events">
+        <input type="search" name="searchTerm" value="@Model.SearchTerm" placeholder="Search events by name, description, or type" />
+        <select name="eventTypeId">
+            <option value="">All event types</option>
+            @foreach (var option in Model.EventTypeOptions)
+            {
+                <option value="@option.Value" selected="@(Model.EventTypeId?.ToString() == option.Value ? "selected" : null)">@option.Text</option>
+            }
+        </select>
+        <select name="venueId">
+            <option value="">All venues</option>
+            @foreach (var option in Model.VenueOptions)
+            {
+                <option value="@option.Value" selected="@(Model.VenueId?.ToString() == option.Value ? "selected" : null)">@option.Text</option>
+            }
+        </select>
+        <select name="venueAvailability">
+            <option value="">Any venue availability</option>
+            @foreach (var option in Model.VenueAvailabilityOptions)
+            {
+                <option value="@option.Value" selected="@(Model.VenueAvailability == option.Value ? "selected" : null)">@option.Text</option>
+            }
+        </select>
+        <input type="date" name="dateFrom" value="@Model.DateFrom?.ToString("yyyy-MM-dd")" />
+        <input type="date" name="dateTo" value="@Model.DateTo?.ToString("yyyy-MM-dd")" />
         <button type="submit" class="button-primary">Search</button>
         <a class="button-secondary" asp-controller="EventsPage" asp-action="Index">Clear</a>
     </form>
@@ -38,10 +60,13 @@
                 }
 
                 <div class="showcase-copy event-showcase-copy">
-                    <span class="section-badge">@evnt.StartDateTime.ToString("dd MMM") - @evnt.EndDateTime.ToString("dd MMM")</span>
+                    <div class="showcase-badges">
+                        <span class="section-badge">@evnt.EventTypeName</span>
+                        <span class="section-badge">@evnt.StartDateTime.ToString("dd MMM") - @evnt.EndDateTime.ToString("dd MMM")</span>
+                    </div>
                     <h2>@evnt.Name</h2>
                     <p>@evnt.Description</p>
-                    <p style="margin-top: 0.5rem;">Bookings: @evnt.BookingCount</p>
+                    <p class="supporting-copy">Bookings: @evnt.BookingCount</p>
                     <div class="event-card-actions">
                         <a class="event-action event-action-primary" asp-controller="EventsPage" asp-action="Details" asp-route-id="@evnt.Id">Details</a>
                         <a class="event-action event-action-secondary" asp-controller="EventsPage" asp-action="Edit" asp-route-id="@evnt.Id">Edit</a>
@@ -56,6 +81,6 @@ else
 {
     <div class="empty-state">
         <h3>No events matched your search</h3>
-        <p>Try a different title, description, or date filter.</p>
+        <p>Try a different event type, venue, availability, or date range.</p>
     </div>
 }

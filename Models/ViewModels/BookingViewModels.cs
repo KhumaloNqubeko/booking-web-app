@@ -30,8 +30,12 @@ namespace Booking_webapp.Models.ViewModels
     public class BookingListItemViewModel
     {
         public Guid Id { get; set; }
+        public Guid VenueId { get; set; }
+        public Guid EventId { get; set; }
         public string VenueName { get; set; } = string.Empty;
         public string EventName { get; set; } = string.Empty;
+        public string EventTypeName { get; set; } = string.Empty;
+        public string VenueAvailability { get; set; } = string.Empty;
         public DateTime BookingDate { get; set; }
         public string Status { get; set; } = string.Empty;
     }
@@ -40,8 +44,14 @@ namespace Booking_webapp.Models.ViewModels
     {
         public string? SearchTerm { get; set; }
         public string? Status { get; set; }
+        public Guid? VenueId { get; set; }
+        public int? EventTypeId { get; set; }
+        public string? VenueAvailability { get; set; }
         public DateTime? DateFrom { get; set; }
         public DateTime? DateTo { get; set; }
+        public List<SelectListItem> VenueOptions { get; set; } = new();
+        public List<SelectListItem> EventTypeOptions { get; set; } = new();
+        public List<SelectListItem> VenueAvailabilityOptions { get; set; } = new();
         public int TotalCount { get; set; }
         public int ConfirmedCount { get; set; }
         public int PendingCount { get; set; }
@@ -56,6 +66,8 @@ namespace Booking_webapp.Models.ViewModels
         public Guid EventId { get; set; }
         public string VenueName { get; set; } = string.Empty;
         public string EventName { get; set; } = string.Empty;
+        public string EventTypeName { get; set; } = string.Empty;
+        public string VenueAvailability { get; set; } = string.Empty;
         public DateTime BookingDate { get; set; }
         public string Status { get; set; } = string.Empty;
     }
@@ -65,8 +77,14 @@ namespace Booking_webapp.Models.ViewModels
         public string? Query { get; set; }
         public string Scope { get; set; } = "All";
         public string? BookingStatus { get; set; }
+        public Guid? VenueId { get; set; }
+        public int? EventTypeId { get; set; }
+        public string? VenueAvailability { get; set; }
         public DateTime? DateFrom { get; set; }
         public DateTime? DateTo { get; set; }
+        public List<SelectListItem> VenueOptions { get; set; } = new();
+        public List<SelectListItem> EventTypeOptions { get; set; } = new();
+        public List<SelectListItem> VenueAvailabilityOptions { get; set; } = new();
         public List<VenueListItemViewModel> Venues { get; set; } = new();
         public List<EventListItemViewModel> Events { get; set; } = new();
         public List<BookingListItemViewModel> Bookings { get; set; } = new();

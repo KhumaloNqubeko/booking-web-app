@@ -36,6 +36,10 @@
                 <strong>@Model.Capacity guests</strong>
             </article>
             <article class="meta-card">
+                <span class="eyebrow">Availability</span>
+                <strong>@Model.Availability</strong>
+            </article>
+            <article class="meta-card">
                 <span class="eyebrow">Linked bookings</span>
                 <strong>@Model.BookingCount</strong>
             </article>
@@ -58,7 +62,7 @@
                     <article class="stack-item">
                         <div>
                             <h3>@booking.EventName</h3>
-                            <p>@booking.BookingDate.ToString("dd MMM yyyy")</p>
+                            <p>@booking.EventTypeName - @booking.BookingDate.ToString("dd MMM yyyy")</p>
                         </div>
                         <span class="status-pill status-@booking.Status.ToLowerInvariant()">@booking.Status</span>
                     </article>

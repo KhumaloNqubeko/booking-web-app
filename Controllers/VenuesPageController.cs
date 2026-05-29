@@ -1,9 +1,11 @@
 using Azure;
 using Booking_webapp.Data;
+using Booking_webapp.Models;
 using Booking_webapp.Models.Entities;
 using Booking_webapp.Models.ViewModels;
 using Booking_webapp.Services;
 using Microsoft.AspNetCore.Mvc;
+using Microsoft.AspNetCore.Mvc.Rendering;
 using Microsoft.EntityFrameworkCore;
 
 namespace Booking_webapp.Controllers
@@ -24,16 +26,21 @@ namespace Booking_webapp.Controllers
         }
 
         [HttpGet("")]
-        public async Task<IActionResult> Index(string? searchTerm = null)
+        public async Task<IActionResult> Index(string? searchTerm = null, string? availability = null)
         {
             var venueQuery = _context.Venues.AsNoTracking();
 
             if (!string.IsNullOrWhiteSpace(searchTerm))
             {
-                var term = searchTerm.Trim();
+                var term = searchTerm.Trim().ToLower();
                 venueQuery = venueQuery.Where(v =>
-                    EF.Functions.ILike(v.Name, $"%{term}%") ||
-                    EF.Functions.ILike(v.Location, $"%{term}%"));
+                    v.Name.ToLower().Contains(term) ||
+                    v.Location.ToLower().Contains(term));
+            }
+
+            if (!string.IsNullOrWhiteSpace(availability))
+            {
+                venueQuery = venueQuery.Where(v => v.Availability == availability);
             }
 
             var bookingCounts = await _context.Bookings
@@ -50,6 +57,7 @@ namespace Booking_webapp.Controllers
                     Name = venue.Name,
                     Location = venue.Location,
                     Capacity = venue.Capacity,
+                    Availability = venue.Availability,
                     ImageUrl = venue.ImageUrl
                 })
                 .ToListAsync();
@@ -60,17 +68,23 @@ namespace Booking_webapp.Controllers
                 venue.ImageUrl = ResolveVenueImageUrl(venue.ImageUrl);
             }
 
-            return View("~/Views/Venues/Index.cshtml", new VenueDirectoryViewModel
+            var model = new VenueDirectoryViewModel
             {
                 SearchTerm = searchTerm,
+                Availability = availability,
                 Venues = venues
-            });
+            };
+
+            PopulateVenueAvailabilityOptions(model);
+            return View("~/Views/Venues/Index.cshtml", model);
         }
 
         [HttpGet("Create")]
         public IActionResult Create()
         {
-            return View("~/Views/Venues/Create.cshtml", new VenueFormViewModel());
+            var model = new VenueFormViewModel();
+            PopulateVenueAvailabilityOptions(model);
+            return View("~/Views/Venues/Create.cshtml", model);
         }
 
         [HttpPost("Create")]
@@ -78,9 +92,11 @@ namespace Booking_webapp.Controllers
         public async Task<IActionResult> Create(VenueFormViewModel model)
         {
             ValidateImage(model.ImageFile, nameof(model.ImageFile));
+            ValidateAvailability(model.Availability, nameof(model.Availability));
 
             if (!ModelState.IsValid)
             {
+                PopulateVenueAvailabilityOptions(model);
                 return View("~/Views/Venues/Create.cshtml", model);
             }
 
@@ -89,7 +105,8 @@ namespace Booking_webapp.Controllers
                 Id = Guid.NewGuid(),
                 Name = model.Name,
                 Location = model.Location,
-                Capacity = model.Capacity
+                Capacity = model.Capacity,
+                Availability = model.Availability
             };
 
             try
@@ -102,11 +119,13 @@ namespace Booking_webapp.Controllers
             catch (InvalidOperationException ex)
             {
                 ModelState.AddModelError(string.Empty, ex.Message);
+                PopulateVenueAvailabilityOptions(model);
                 return View("~/Views/Venues/Create.cshtml", model);
             }
             catch (RequestFailedException)
             {
                 ModelState.AddModelError(string.Empty, "The venue image could not be uploaded right now. Please try again.");
+                PopulateVenueAvailabilityOptions(model);
                 return View("~/Views/Venues/Create.cshtml", model);
             }
 
@@ -130,14 +149,15 @@ namespace Booking_webapp.Controllers
 
             var relatedBookings = await (
                 from booking in _context.Bookings.AsNoTracking()
-                join evnt in _context.Events.AsNoTracking() on booking.EventId equals evnt.Id into eventJoin
-                from evnt in eventJoin.DefaultIfEmpty()
+                join evnt in _context.Events.AsNoTracking() on booking.EventId equals evnt.Id
+                join eventType in _context.EventTypes.AsNoTracking() on evnt.EventTypeId equals eventType.Id
                 where booking.VenueId == id
                 orderby booking.BookingDate descending
                 select new RelatedBookingViewModel
                 {
                     Id = booking.Id,
-                    EventName = evnt != null ? evnt.Name : "Unknown event",
+                    EventName = evnt.Name,
+                    EventTypeName = eventType.Name,
                     BookingDate = booking.BookingDate,
                     Status = booking.Status
                 })
@@ -150,6 +170,7 @@ namespace Booking_webapp.Controllers
                 Name = venue.Name,
                 Location = venue.Location,
                 Capacity = venue.Capacity,
+                Availability = venue.Availability,
                 ImageUrl = ResolveVenueImageUrl(venue.ImageUrl),
                 BookingCount = await _context.Bookings.CountAsync(b => b.VenueId == id),
                 RelatedBookings = relatedBookings
@@ -169,14 +190,18 @@ namespace Booking_webapp.Controllers
                 return RedirectToAction(nameof(Index));
             }
 
-            return View("~/Views/Venues/Edit.cshtml", new VenueFormViewModel
+            var model = new VenueFormViewModel
             {
                 Id = venue.Id,
                 Name = venue.Name,
                 Location = venue.Location,
                 Capacity = venue.Capacity,
+                Availability = venue.Availability,
                 ImageUrl = ResolveVenueImageUrl(venue.ImageUrl)
-            });
+            };
+
+            PopulateVenueAvailabilityOptions(model);
+            return View("~/Views/Venues/Edit.cshtml", model);
         }
 
         [HttpPost("Edit/{id:guid}")]
@@ -189,10 +214,12 @@ namespace Booking_webapp.Controllers
             }
 
             ValidateImage(model.ImageFile, nameof(model.ImageFile));
+            ValidateAvailability(model.Availability, nameof(model.Availability));
 
             if (!ModelState.IsValid)
             {
                 model.ImageUrl = ResolveVenueImageUrl(model.ImageUrl);
+                PopulateVenueAvailabilityOptions(model);
                 return View("~/Views/Venues/Edit.cshtml", model);
             }
 
@@ -209,6 +236,7 @@ namespace Booking_webapp.Controllers
             venue.Name = model.Name;
             venue.Location = model.Location;
             venue.Capacity = model.Capacity;
+            venue.Availability = model.Availability;
 
             try
             {
@@ -221,12 +249,14 @@ namespace Booking_webapp.Controllers
             {
                 ModelState.AddModelError(string.Empty, ex.Message);
                 model.ImageUrl = ResolveVenueImageUrl(previousImage);
+                PopulateVenueAvailabilityOptions(model);
                 return View("~/Views/Venues/Edit.cshtml", model);
             }
             catch (RequestFailedException)
             {
                 ModelState.AddModelError(string.Empty, "The venue image could not be uploaded right now. Please try again.");
                 model.ImageUrl = ResolveVenueImageUrl(previousImage);
+                PopulateVenueAvailabilityOptions(model);
                 return View("~/Views/Venues/Edit.cshtml", model);
             }
 
@@ -258,6 +288,7 @@ namespace Booking_webapp.Controllers
                 Name = venue.Name,
                 Location = venue.Location,
                 Capacity = venue.Capacity,
+                Availability = venue.Availability,
                 ImageUrl = ResolveVenueImageUrl(venue.ImageUrl),
                 BookingCount = await _context.Bookings.CountAsync(b => b.VenueId == id)
             });
@@ -292,6 +323,14 @@ namespace Booking_webapp.Controllers
             return RedirectToAction(nameof(Index));
         }
 
+        private void ValidateAvailability(string availability, string modelKey)
+        {
+            if (!VenueAvailabilityCatalog.All.Contains(availability))
+            {
+                ModelState.AddModelError(modelKey, "Please select a valid availability status.");
+            }
+        }
+
         private void ValidateImage(IFormFile? imageFile, string modelKey)
         {
             if (imageFile == null || imageFile.Length == 0)
@@ -308,6 +347,28 @@ namespace Booking_webapp.Controllers
             {
                 ModelState.AddModelError(modelKey, "Please upload a JPG, PNG, WEBP, or GIF image.");
             }
+        }
+
+        private void PopulateVenueAvailabilityOptions(VenueFormViewModel model)
+        {
+            model.AvailabilityOptions = VenueAvailabilityCatalog.All
+                .Select(option => new SelectListItem
+                {
+                    Value = option,
+                    Text = option
+                })
+                .ToList();
+        }
+
+        private void PopulateVenueAvailabilityOptions(VenueDirectoryViewModel model)
+        {
+            model.AvailabilityOptions = VenueAvailabilityCatalog.All
+                .Select(option => new SelectListItem
+                {
+                    Value = option,
+                    Text = option
+                })
+                .ToList();
         }
 
         private string? ResolveVenueImageUrl(string? storedImage)

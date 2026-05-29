@@ -15,8 +15,26 @@ builder.Services.Configure<AzureBlobStorageOptions>(
     builder.Configuration.GetSection(AzureBlobStorageOptions.SectionName));
 builder.Services.AddSingleton<IBlobImageStorageService, BlobImageStorageService>();
 
-builder.Services.AddDbContext<ApplicationDbContext>(options => 
-options.UseNpgsql(builder.Configuration.GetConnectionString("DefaultConnection")));
+var databaseProvider = builder.Configuration["DatabaseProvider"] ?? "PostgreSql";
+
+builder.Services.AddDbContext<ApplicationDbContext>(options =>
+{
+    if (databaseProvider.Equals("SqlServer", StringComparison.OrdinalIgnoreCase))
+    {
+        var sqlServerConnection =
+            builder.Configuration.GetConnectionString("AzureSqlConnection") ??
+            builder.Configuration.GetConnectionString("DefaultConnection");
+
+        options.UseSqlServer(sqlServerConnection);
+        return;
+    }
+
+    var postgresConnection =
+        builder.Configuration.GetConnectionString("PostgreSqlConnection") ??
+        builder.Configuration.GetConnectionString("DefaultConnection");
+
+    options.UseNpgsql(postgresConnection);
+});
 
 builder.Services.AddSwaggerGen();
 

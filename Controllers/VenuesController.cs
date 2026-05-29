@@ -31,20 +31,34 @@ namespace Booking_webapp.Controllers
         }
 
         [HttpGet]
-        public async Task<IActionResult> GetAllVenues()
+        public async Task<IActionResult> GetAllVenues(string? availability = null)
         {
-            var venues = await dbContext.Venues.ToListAsync();
-            return Ok(venues);
+            var venues = dbContext.Venues.AsQueryable();
+
+            if (!string.IsNullOrWhiteSpace(availability))
+            {
+                venues = venues.Where(venue => venue.Availability == availability);
+            }
+
+            return Ok(await venues.ToListAsync());
         }
 
         [HttpPost]
         public async Task<IActionResult> PostVenue(VenueDto venueDto)
         {
+            ValidateAvailability(venueDto.Availability);
+
+            if (!ModelState.IsValid)
+            {
+                return ValidationProblem(ModelState);
+            }
+
             var venue = new Venue
             {
                 Name = venueDto.Name,
                 Location = venueDto.Location,
                 Capacity = venueDto.Capacity,
+                Availability = venueDto.Availability,
                 ImageUrl = venueDto.ImageUrl
             };
 
@@ -64,9 +78,17 @@ namespace Booking_webapp.Controllers
                 return NotFound(new { message = "The requested venue was not found." });
             }
 
+            ValidateAvailability(venueDto.Availability);
+
+            if (!ModelState.IsValid)
+            {
+                return ValidationProblem(ModelState);
+            }
+
             venue.Name = venueDto.Name;
             venue.Location = venueDto.Location;
             venue.Capacity = venueDto.Capacity;
+            venue.Availability = venueDto.Availability;
             venue.ImageUrl = venueDto.ImageUrl;
 
             await dbContext.SaveChangesAsync();
@@ -84,7 +106,6 @@ namespace Booking_webapp.Controllers
                 return NotFound(new { message = "The requested venue was not found." });
             }
 
-            // Block deletes for venues that already have linked bookings.
             var hasBookings = await dbContext.Bookings.AnyAsync(b => b.VenueId == id);
 
             if (hasBookings)
@@ -96,6 +117,14 @@ namespace Booking_webapp.Controllers
             await dbContext.SaveChangesAsync();
 
             return Ok(new { message = "Venue deleted successfully." });
+        }
+
+        private void ValidateAvailability(string availability)
+        {
+            if (!VenueAvailabilityCatalog.All.Contains(availability))
+            {
+                ModelState.AddModelError(nameof(VenueDto.Availability), "Please select a valid availability status.");
+            }
         }
     }
 }

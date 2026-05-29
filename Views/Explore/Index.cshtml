@@ -11,8 +11,8 @@
 </section>
 
 <section class="panel filter-panel">
-    <form method="get" asp-controller="Explore" asp-action="Index" class="search-bar search-bar-wide search-bar-matrix">
-        <input type="search" name="query" value="@Model.Query" placeholder="Search by venue, event, location, or status" />
+    <form method="get" asp-controller="Explore" asp-action="Index" class="search-bar search-bar-bookings">
+        <input type="search" name="query" value="@Model.Query" placeholder="Search by venue, event, type, location, or status" />
         <select name="scope">
             <option value="All" selected="@(Model.Scope == "All" ? "selected" : null)">Everything</option>
             <option value="Venues" selected="@(Model.Scope == "Venues" ? "selected" : null)">Venues</option>
@@ -25,6 +25,27 @@
             <option value="Confirmed" selected="@(Model.BookingStatus == "Confirmed" ? "selected" : null)">Confirmed</option>
             <option value="Cancelled" selected="@(Model.BookingStatus == "Cancelled" ? "selected" : null)">Cancelled</option>
         </select>
+        <select name="venueId">
+            <option value="">All venues</option>
+            @foreach (var option in Model.VenueOptions)
+            {
+                <option value="@option.Value" selected="@(Model.VenueId?.ToString() == option.Value ? "selected" : null)">@option.Text</option>
+            }
+        </select>
+        <select name="eventTypeId">
+            <option value="">All event types</option>
+            @foreach (var option in Model.EventTypeOptions)
+            {
+                <option value="@option.Value" selected="@(Model.EventTypeId?.ToString() == option.Value ? "selected" : null)">@option.Text</option>
+            }
+        </select>
+        <select name="venueAvailability">
+            <option value="">Any venue availability</option>
+            @foreach (var option in Model.VenueAvailabilityOptions)
+            {
+                <option value="@option.Value" selected="@(Model.VenueAvailability == option.Value ? "selected" : null)">@option.Text</option>
+            }
+        </select>
         <input type="date" name="dateFrom" value="@Model.DateFrom?.ToString("yyyy-MM-dd")" />
         <input type="date" name="dateTo" value="@Model.DateTo?.ToString("yyyy-MM-dd")" />
         <button type="submit" class="button-primary">Search</button>
@@ -36,17 +57,17 @@
     <article class="feature-card">
         <p class="eyebrow">Venues</p>
         <h2>@Model.Venues.Count result(s)</h2>
-        <p>Search by venue name or location.</p>
+        <p>Search by venue name, location, or availability.</p>
     </article>
     <article class="feature-card">
         <p class="eyebrow">Events</p>
         <h2>@Model.Events.Count result(s)</h2>
-        <p>Search by event title, description, or date range.</p>
+        <p>Search by event type, date range, venue, or availability.</p>
     </article>
     <article class="feature-card">
         <p class="eyebrow">Bookings</p>
         <h2>@Model.Bookings.Count result(s)</h2>
-        <p>Search by venue, event, status, or booking date.</p>
+        <p>Search by venue, event type, status, or booking date.</p>
     </article>
 </section>
 
@@ -67,7 +88,7 @@
                     <article class="stack-item">
                         <div>
                             <h3>@venue.Name</h3>
-                            <p>@venue.Location - Capacity @venue.Capacity - Bookings @venue.BookingCount</p>
+                            <p>@venue.Location - Capacity @venue.Capacity - @venue.Availability - Bookings @venue.BookingCount</p>
                         </div>
                         <a class="chip-link" asp-controller="VenuesPage" asp-action="Details" asp-route-id="@venue.Id">Open</a>
                     </article>
@@ -78,7 +99,7 @@
         {
             <div class="empty-state">
                 <h3>No venue matches</h3>
-                <p>Try a different venue name or location.</p>
+                <p>Try a different venue name, location, or availability value.</p>
             </div>
         }
     </section>
@@ -101,7 +122,7 @@
                     <article class="stack-item">
                         <div>
                             <h3>@evnt.Name</h3>
-                            <p>@evnt.StartDateTime.ToString("dd MMM yyyy HH:mm") - @evnt.Description</p>
+                            <p>@evnt.EventTypeName - @evnt.StartDateTime.ToString("dd MMM yyyy HH:mm") - @evnt.Description</p>
                         </div>
                         <a class="chip-link" asp-controller="EventsPage" asp-action="Details" asp-route-id="@evnt.Id">Open</a>
                     </article>
@@ -112,7 +133,7 @@
         {
             <div class="empty-state">
                 <h3>No event matches</h3>
-                <p>Try a different title, description, or date range.</p>
+                <p>Try a different title, event type, venue, availability, or date range.</p>
             </div>
         }
     </section>
@@ -137,7 +158,8 @@
                             <p class="eyebrow">Booking date</p>
                             <h3>@booking.BookingDate.ToString("dd MMM yyyy")</h3>
                             <p>@booking.EventName</p>
-                            <p>@booking.VenueName</p>
+                            <p>@booking.EventTypeName at @booking.VenueName</p>
+                            <p>@booking.VenueAvailability</p>
                         </div>
                         <div class="booking-card-meta">
                             <span class="status-pill status-@booking.Status.ToLowerInvariant()">@booking.Status</span>
@@ -151,7 +173,7 @@
         {
             <div class="empty-state">
                 <h3>No booking matches</h3>
-                <p>Try a different venue, event, status, or date filter.</p>
+                <p>Try a different venue, event type, availability, status, or date filter.</p>
             </div>
         }
     </section>

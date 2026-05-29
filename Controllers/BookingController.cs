@@ -31,9 +31,59 @@ namespace Booking_webapp.Controllers
         }
 
         [HttpGet]
-        public async Task<IActionResult> GetAllBookings()
+        public async Task<IActionResult> GetAllBookings(
+            Guid? venueId = null,
+            int? eventTypeId = null,
+            string? venueAvailability = null,
+            DateTime? dateFrom = null,
+            DateTime? dateTo = null,
+            string? status = null)
         {
-            var bookings = await dbContext.Bookings.ToListAsync();
+            var bookingQuery =
+                from booking in dbContext.Bookings.AsNoTracking()
+                join venue in dbContext.Venues.AsNoTracking() on booking.VenueId equals venue.Id
+                join evnt in dbContext.Events.AsNoTracking() on booking.EventId equals evnt.Id
+                select new
+                {
+                    Booking = booking,
+                    EventTypeId = evnt.EventTypeId,
+                    VenueAvailability = venue.Availability
+                };
+
+            if (venueId.HasValue)
+            {
+                bookingQuery = bookingQuery.Where(item => item.Booking.VenueId == venueId.Value);
+            }
+
+            if (eventTypeId.HasValue)
+            {
+                bookingQuery = bookingQuery.Where(item => item.EventTypeId == eventTypeId.Value);
+            }
+
+            if (!string.IsNullOrWhiteSpace(venueAvailability))
+            {
+                bookingQuery = bookingQuery.Where(item => item.VenueAvailability == venueAvailability);
+            }
+
+            if (dateFrom.HasValue)
+            {
+                bookingQuery = bookingQuery.Where(item => item.Booking.BookingDate.Date >= dateFrom.Value.Date);
+            }
+
+            if (dateTo.HasValue)
+            {
+                bookingQuery = bookingQuery.Where(item => item.Booking.BookingDate.Date <= dateTo.Value.Date);
+            }
+
+            if (!string.IsNullOrWhiteSpace(status))
+            {
+                bookingQuery = bookingQuery.Where(item => item.Booking.Status == status);
+            }
+
+            var bookings = await bookingQuery
+                .Select(item => item.Booking)
+                .ToListAsync();
+
             return Ok(bookings);
         }
 
@@ -106,9 +156,15 @@ namespace Booking_webapp.Controllers
 
         private async Task ValidateBookingAsync(BookingDto bookingDto, Guid? bookingIdToExclude = null)
         {
-            if (!await dbContext.Venues.AnyAsync(v => v.Id == bookingDto.VenueId))
+            var venue = await dbContext.Venues.AsNoTracking().FirstOrDefaultAsync(v => v.Id == bookingDto.VenueId);
+
+            if (venue == null)
             {
                 ModelState.AddModelError(nameof(bookingDto.VenueId), "Please select a valid venue.");
+            }
+            else if (venue.Availability != VenueAvailabilityCatalog.Available)
+            {
+                ModelState.AddModelError(nameof(bookingDto.VenueId), "Only venues marked as available can receive new bookings.");
             }
 
             if (!await dbContext.Events.AnyAsync(e => e.Id == bookingDto.EventId))
@@ -116,7 +172,6 @@ namespace Booking_webapp.Controllers
                 ModelState.AddModelError(nameof(bookingDto.EventId), "Please select a valid event.");
             }
 
-            // Prevent more than one booking for the same venue on the same date.
             var conflictingBookingExists = await dbContext.Bookings.AnyAsync(b =>
                 b.VenueId == bookingDto.VenueId &&
                 b.Id != bookingIdToExclude &&

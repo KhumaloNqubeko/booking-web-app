@@ -94,6 +94,54 @@
         "tags": [
           "Booking"
         ],
+        "parameters": [
+          {
+            "name": "venueId",
+            "in": "query",
+            "schema": {
+              "type": "string",
+              "format": "uuid"
+            }
+          },
+          {
+            "name": "eventTypeId",
+            "in": "query",
+            "schema": {
+              "type": "integer",
+              "format": "int32"
+            }
+          },
+          {
+            "name": "venueAvailability",
+            "in": "query",
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "name": "dateFrom",
+            "in": "query",
+            "schema": {
+              "type": "string",
+              "format": "date-time"
+            }
+          },
+          {
+            "name": "dateTo",
+            "in": "query",
+            "schema": {
+              "type": "string",
+              "format": "date-time"
+            }
+          },
+          {
+            "name": "status",
+            "in": "query",
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
         "responses": {
           "200": {
             "description": "OK"
@@ -145,6 +193,29 @@
           },
           {
             "name": "status",
+            "in": "query",
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "name": "venueId",
+            "in": "query",
+            "schema": {
+              "type": "string",
+              "format": "uuid"
+            }
+          },
+          {
+            "name": "eventTypeId",
+            "in": "query",
+            "schema": {
+              "type": "integer",
+              "format": "int32"
+            }
+          },
+          {
+            "name": "venueAvailability",
             "in": "query",
             "schema": {
               "type": "string"
@@ -542,6 +613,47 @@
         "tags": [
           "Event"
         ],
+        "parameters": [
+          {
+            "name": "eventTypeId",
+            "in": "query",
+            "schema": {
+              "type": "integer",
+              "format": "int32"
+            }
+          },
+          {
+            "name": "venueId",
+            "in": "query",
+            "schema": {
+              "type": "string",
+              "format": "uuid"
+            }
+          },
+          {
+            "name": "venueAvailability",
+            "in": "query",
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "name": "dateFrom",
+            "in": "query",
+            "schema": {
+              "type": "string",
+              "format": "date-time"
+            }
+          },
+          {
+            "name": "dateTo",
+            "in": "query",
+            "schema": {
+              "type": "string",
+              "format": "date-time"
+            }
+          }
+        ],
         "responses": {
           "200": {
             "description": "OK"
@@ -592,7 +704,38 @@
             }
           },
           {
-            "name": "startFrom",
+            "name": "eventTypeId",
+            "in": "query",
+            "schema": {
+              "type": "integer",
+              "format": "int32"
+            }
+          },
+          {
+            "name": "venueId",
+            "in": "query",
+            "schema": {
+              "type": "string",
+              "format": "uuid"
+            }
+          },
+          {
+            "name": "venueAvailability",
+            "in": "query",
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "name": "dateFrom",
+            "in": "query",
+            "schema": {
+              "type": "string",
+              "format": "date-time"
+            }
+          },
+          {
+            "name": "dateTo",
             "in": "query",
             "schema": {
               "type": "string",
@@ -648,6 +791,16 @@
             }
           },
           {
+            "name": "EventTypeId",
+            "in": "query",
+            "schema": {
+              "maximum": 2147483647,
+              "minimum": 1,
+              "type": "integer",
+              "format": "int32"
+            }
+          },
+          {
             "name": "ImageUrl",
             "in": "query",
             "schema": {
@@ -668,6 +821,16 @@
             "schema": {
               "type": "string",
               "format": "date-time"
+            }
+          },
+          {
+            "name": "EventTypeOptions",
+            "in": "query",
+            "schema": {
+              "type": "array",
+              "items": {
+                "$ref": "#/components/schemas/SelectListItem"
+              }
             }
           }
         ],
@@ -782,6 +945,16 @@
             }
           },
           {
+            "name": "EventTypeId",
+            "in": "query",
+            "schema": {
+              "maximum": 2147483647,
+              "minimum": 1,
+              "type": "integer",
+              "format": "int32"
+            }
+          },
+          {
             "name": "ImageUrl",
             "in": "query",
             "schema": {
@@ -802,6 +975,16 @@
             "schema": {
               "type": "string",
               "format": "date-time"
+            }
+          },
+          {
+            "name": "EventTypeOptions",
+            "in": "query",
+            "schema": {
+              "type": "array",
+              "items": {
+                "$ref": "#/components/schemas/SelectListItem"
+              }
             }
           }
         ],
@@ -899,6 +1082,29 @@
           },
           {
             "name": "bookingStatus",
+            "in": "query",
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "name": "venueId",
+            "in": "query",
+            "schema": {
+              "type": "string",
+              "format": "uuid"
+            }
+          },
+          {
+            "name": "eventTypeId",
+            "in": "query",
+            "schema": {
+              "type": "integer",
+              "format": "int32"
+            }
+          },
+          {
+            "name": "venueAvailability",
             "in": "query",
             "schema": {
               "type": "string"
@@ -1061,6 +1267,15 @@
         "tags": [
           "Venues"
         ],
+        "parameters": [
+          {
+            "name": "availability",
+            "in": "query",
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
         "responses": {
           "200": {
             "description": "OK"
@@ -1105,6 +1320,13 @@
         "parameters": [
           {
             "name": "searchTerm",
+            "in": "query",
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "name": "availability",
             "in": "query",
             "schema": {
               "type": "string"
@@ -1169,10 +1391,28 @@
             }
           },
           {
+            "name": "Availability",
+            "in": "query",
+            "required": true,
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
             "name": "ImageUrl",
             "in": "query",
             "schema": {
               "type": "string"
+            }
+          },
+          {
+            "name": "AvailabilityOptions",
+            "in": "query",
+            "schema": {
+              "type": "array",
+              "items": {
+                "$ref": "#/components/schemas/SelectListItem"
+              }
             }
           }
         ],
@@ -1297,10 +1537,28 @@
             }
           },
           {
+            "name": "Availability",
+            "in": "query",
+            "required": true,
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
             "name": "ImageUrl",
             "in": "query",
             "schema": {
               "type": "string"
+            }
+          },
+          {
+            "name": "AvailabilityOptions",
+            "in": "query",
+            "schema": {
+              "type": "array",
+              "items": {
+                "$ref": "#/components/schemas/SelectListItem"
+              }
             }
           }
         ],
@@ -1411,6 +1669,10 @@
             "type": "string",
             "nullable": true
           },
+          "eventTypeId": {
+            "type": "integer",
+            "format": "int32"
+          },
           "startDateTime": {
             "type": "string",
             "format": "date-time"
@@ -1477,6 +1739,10 @@
           "capacity": {
             "type": "integer",
             "format": "int32"
+          },
+          "availability": {
+            "type": "string",
+            "nullable": true
           },
           "imageUrl": {
             "type": "string",

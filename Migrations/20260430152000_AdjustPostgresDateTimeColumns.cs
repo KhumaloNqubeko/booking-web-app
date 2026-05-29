@@ -1,3 +1,4 @@
+using System;
 using Booking_webapp.Data;
 using Microsoft.EntityFrameworkCore.Infrastructure;
 using Microsoft.EntityFrameworkCore.Migrations;
@@ -8,8 +9,18 @@ namespace Booking_webapp.Migrations
     [Migration("20260430152000_AdjustPostgresDateTimeColumns")]
     public class AdjustPostgresDateTimeColumns : Migration
     {
+        private bool IsNpgsql()
+        {
+            return (ActiveProvider ?? string.Empty).Contains("Npgsql", StringComparison.OrdinalIgnoreCase);
+        }
+
         protected override void Up(MigrationBuilder migrationBuilder)
         {
+            if (!IsNpgsql())
+            {
+                return;
+            }
+
             migrationBuilder.AlterColumn<DateTime>(
                 name: "BookingDate",
                 table: "Bookings",
@@ -37,6 +48,11 @@ namespace Booking_webapp.Migrations
 
         protected override void Down(MigrationBuilder migrationBuilder)
         {
+            if (!IsNpgsql())
+            {
+                return;
+            }
+
             migrationBuilder.AlterColumn<DateTime>(
                 name: "BookingDate",
                 table: "Bookings",

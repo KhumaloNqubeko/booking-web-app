@@ -21,6 +21,13 @@
             <span asp-validation-for="Name"></span>
         </div>
         <div class="field">
+            <label asp-for="EventTypeId"></label>
+            <select asp-for="EventTypeId" asp-items="Model.EventTypeOptions">
+                <option value="">Select an event type</option>
+            </select>
+            <span asp-validation-for="EventTypeId"></span>
+        </div>
+        <div class="field">
             <label asp-for="ImageFile"></label>
             <input asp-for="ImageFile" type="file" accept=".jpg,.jpeg,.png,.webp,.gif" />
             <span asp-validation-for="ImageFile"></span>

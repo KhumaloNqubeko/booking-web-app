@@ -8,9 +8,18 @@ namespace Booking_webapp.Migrations
     /// <inheritdoc />
     public partial class initialmigration : Migration
     {
+        private bool IsSqlServer()
+        {
+            return ActiveProvider.Contains("SqlServer", StringComparison.OrdinalIgnoreCase);
+        }
+
         /// <inheritdoc />
         protected override void Up(MigrationBuilder migrationBuilder)
         {
+            var eventDateTimeType = IsSqlServer()
+                ? "datetime2"
+                : "timestamp without time zone";
+
             migrationBuilder.CreateTable(
                 name: "Venues",
                 columns: table => new
@@ -33,8 +42,8 @@ namespace Booking_webapp.Migrations
                     Id = table.Column<Guid>(nullable: false),
                     Name = table.Column<string>(nullable: false),
                     Description = table.Column<string>(nullable: false),
-                    StartDateTime = table.Column<DateTime>(type: "timestamp without time zone", nullable: false),
-                    EndDateTime = table.Column<DateTime>(type: "timestamp without time zone", nullable: false)
+                    StartDateTime = table.Column<DateTime>(type: eventDateTimeType, nullable: false),
+                    EndDateTime = table.Column<DateTime>(type: eventDateTimeType, nullable: false)
                 },
                 constraints: table =>
                 {
