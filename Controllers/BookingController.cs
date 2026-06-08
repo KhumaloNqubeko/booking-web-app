@@ -39,6 +39,38 @@ namespace Booking_webapp.Controllers
             DateTime? dateTo = null,
             string? status = null)
         {
+            if (venueId.HasValue &&
+                !await dbContext.Venues.AnyAsync(venue => venue.Id == venueId.Value))
+            {
+                ModelState.AddModelError(nameof(venueId), "Please select a valid venue.");
+            }
+
+            if (eventTypeId.HasValue &&
+                !await dbContext.EventTypes.AnyAsync(eventType => eventType.Id == eventTypeId.Value))
+            {
+                ModelState.AddModelError(nameof(eventTypeId), "Please select a valid event type.");
+            }
+
+            if (!FilterValidation.IsAvailabilityValid(venueAvailability))
+            {
+                ModelState.AddModelError(nameof(venueAvailability), "Please select a valid venue availability.");
+            }
+
+            if (!FilterValidation.IsBookingStatusValid(status))
+            {
+                ModelState.AddModelError(nameof(status), "Please select a valid booking status.");
+            }
+
+            if (!FilterValidation.IsDateRangeValid(dateFrom, dateTo))
+            {
+                ModelState.AddModelError(nameof(dateTo), "The end date must be on or after the start date.");
+            }
+
+            if (!ModelState.IsValid)
+            {
+                return ValidationProblem(ModelState);
+            }
+
             var bookingQuery =
                 from booking in dbContext.Bookings.AsNoTracking()
                 join venue in dbContext.Venues.AsNoTracking() on booking.VenueId equals venue.Id

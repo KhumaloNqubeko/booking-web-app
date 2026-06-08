@@ -28,6 +28,39 @@ namespace Booking_webapp.Controllers
             DateTime? dateFrom = null,
             DateTime? dateTo = null)
         {
+            var venueIsValid = !venueId.HasValue ||
+                await _context.Venues.AnyAsync(venue => venue.Id == venueId.Value);
+            var eventTypeIsValid = !eventTypeId.HasValue ||
+                await _context.EventTypes.AnyAsync(eventType => eventType.Id == eventTypeId.Value);
+            var availabilityIsValid = FilterValidation.IsAvailabilityValid(venueAvailability);
+            var statusIsValid = FilterValidation.IsBookingStatusValid(status);
+            var dateRangeIsValid = FilterValidation.IsDateRangeValid(dateFrom, dateTo);
+
+            if (!venueIsValid)
+            {
+                ModelState.AddModelError(nameof(venueId), "Please select a valid venue.");
+            }
+
+            if (!eventTypeIsValid)
+            {
+                ModelState.AddModelError(nameof(eventTypeId), "Please select a valid event type.");
+            }
+
+            if (!availabilityIsValid)
+            {
+                ModelState.AddModelError(nameof(venueAvailability), "Please select a valid venue availability.");
+            }
+
+            if (!statusIsValid)
+            {
+                ModelState.AddModelError(nameof(status), "Please select a valid booking status.");
+            }
+
+            if (!dateRangeIsValid)
+            {
+                ModelState.AddModelError(nameof(dateTo), "The end date must be on or after the start date.");
+            }
+
             var bookingQuery =
                 from booking in _context.Bookings.AsNoTracking()
                 join venue in _context.Venues.AsNoTracking() on booking.VenueId equals venue.Id
@@ -57,32 +90,32 @@ namespace Booking_webapp.Controllers
                     b.Status.ToLower().Contains(term));
             }
 
-            if (!string.IsNullOrWhiteSpace(status))
+            if (!string.IsNullOrWhiteSpace(status) && statusIsValid)
             {
                 bookingQuery = bookingQuery.Where(b => b.Status == status);
             }
 
-            if (venueId.HasValue)
+            if (venueId.HasValue && venueIsValid)
             {
                 bookingQuery = bookingQuery.Where(b => b.VenueId == venueId.Value);
             }
 
-            if (eventTypeId.HasValue)
+            if (eventTypeId.HasValue && eventTypeIsValid)
             {
                 bookingQuery = bookingQuery.Where(b => b.EventTypeId == eventTypeId.Value);
             }
 
-            if (!string.IsNullOrWhiteSpace(venueAvailability))
+            if (!string.IsNullOrWhiteSpace(venueAvailability) && availabilityIsValid)
             {
                 bookingQuery = bookingQuery.Where(b => b.VenueAvailability == venueAvailability);
             }
 
-            if (dateFrom.HasValue)
+            if (dateRangeIsValid && dateFrom.HasValue)
             {
                 bookingQuery = bookingQuery.Where(b => b.BookingDate.Date >= dateFrom.Value.Date);
             }
 
-            if (dateTo.HasValue)
+            if (dateRangeIsValid && dateTo.HasValue)
             {
                 bookingQuery = bookingQuery.Where(b => b.BookingDate.Date <= dateTo.Value.Date);
             }

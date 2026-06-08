@@ -107,12 +107,12 @@ namespace Booking_webapp.Services
 
         private async Task<BlobContainerClient> GetContainerClientAsync(string containerName, CancellationToken cancellationToken)
         {
-            if (string.IsNullOrWhiteSpace(_options.ConnectionString))
+            if (string.IsNullOrWhiteSpace(_options.StorageConnection))
             {
                 throw new InvalidOperationException("Azure Blob Storage is not configured yet. Add the storage connection string before uploading images.");
             }
 
-            var serviceClient = new BlobServiceClient(_options.ConnectionString);
+            var serviceClient = new BlobServiceClient(_options.StorageConnection);
             var containerClient = serviceClient.GetBlobContainerClient(containerName);
             await containerClient.CreateIfNotExistsAsync(cancellationToken: cancellationToken);
             return containerClient;

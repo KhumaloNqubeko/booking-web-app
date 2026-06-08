@@ -2,16 +2,26 @@
 bin/
 obj/
 artifacts/
+publish/
+out/
 
 # IDE and user-specific files
 .vs/
+.vscode/
 *.user
 *.suo
 *.userosscache
 *.sln.docstates
+*.rsuser
+*.DotSettings.user
 
 # Local tooling
 .dotnet-cli/
+
+# Test output
+TestResults/
+coverage/
+coverage.*
 
 # Logs and temp files
 *.log
@@ -21,10 +31,17 @@ artifacts/
 # Local app configuration overrides
 appsettings.Local.json
 appsettings.*.local.json
+.env
+.env.*
 
 # Secrets
 secrets.json
+Properties/PublishProfiles/*.pubxml.user
+Properties/serviceDependencies*.json.user
+Properties/serviceDependencies.local.json
+Properties/serviceDependencies.*.local.json
 
 # OS files
 Thumbs.db
 Desktop.ini
+.DS_Store

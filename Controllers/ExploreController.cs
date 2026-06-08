@@ -28,7 +28,48 @@ namespace Booking_webapp.Controllers
             DateTime? dateFrom = null,
             DateTime? dateTo = null)
         {
-            var normalizedScope = string.IsNullOrWhiteSpace(scope) ? "All" : scope;
+            var scopeIsValid = FilterValidation.IsScopeValid(scope);
+            var normalizedScope = string.IsNullOrWhiteSpace(scope) || !scopeIsValid
+                ? SearchScopeCatalog.All
+                : scope;
+            var venueIsValid = !venueId.HasValue ||
+                await _context.Venues.AnyAsync(venue => venue.Id == venueId.Value);
+            var eventTypeIsValid = !eventTypeId.HasValue ||
+                await _context.EventTypes.AnyAsync(eventType => eventType.Id == eventTypeId.Value);
+            var availabilityIsValid = FilterValidation.IsAvailabilityValid(venueAvailability);
+            var bookingStatusIsValid = FilterValidation.IsBookingStatusValid(bookingStatus);
+            var dateRangeIsValid = FilterValidation.IsDateRangeValid(dateFrom, dateTo);
+
+            if (!scopeIsValid)
+            {
+                ModelState.AddModelError(nameof(scope), "Please select a valid search scope.");
+            }
+
+            if (!venueIsValid)
+            {
+                ModelState.AddModelError(nameof(venueId), "Please select a valid venue.");
+            }
+
+            if (!eventTypeIsValid)
+            {
+                ModelState.AddModelError(nameof(eventTypeId), "Please select a valid event type.");
+            }
+
+            if (!availabilityIsValid)
+            {
+                ModelState.AddModelError(nameof(venueAvailability), "Please select a valid venue availability.");
+            }
+
+            if (!bookingStatusIsValid)
+            {
+                ModelState.AddModelError(nameof(bookingStatus), "Please select a valid booking status.");
+            }
+
+            if (!dateRangeIsValid)
+            {
+                ModelState.AddModelError(nameof(dateTo), "The end date must be on or after the start date.");
+            }
+
             var term = query?.Trim();
             var loweredTerm = term?.ToLower();
 
@@ -57,12 +98,12 @@ namespace Booking_webapp.Controllers
                         v.Location.ToLower().Contains(loweredTerm));
                 }
 
-                if (venueId.HasValue)
+                if (venueId.HasValue && venueIsValid)
                 {
                     venueQuery = venueQuery.Where(v => v.Id == venueId.Value);
                 }
 
-                if (!string.IsNullOrWhiteSpace(venueAvailability))
+                if (!string.IsNullOrWhiteSpace(venueAvailability) && availabilityIsValid)
                 {
                     venueQuery = venueQuery.Where(v => v.Availability == venueAvailability);
                 }
@@ -115,28 +156,28 @@ namespace Booking_webapp.Controllers
                         e.EventTypeName.ToLower().Contains(loweredTerm));
                 }
 
-                if (eventTypeId.HasValue)
+                if (eventTypeId.HasValue && eventTypeIsValid)
                 {
                     eventQuery = eventQuery.Where(e => e.Event.EventTypeId == eventTypeId.Value);
                 }
 
-                if (dateFrom.HasValue)
+                if (dateRangeIsValid && dateFrom.HasValue)
                 {
-                    eventQuery = eventQuery.Where(e => e.Event.StartDateTime.Date >= dateFrom.Value.Date);
+                    eventQuery = eventQuery.Where(e => e.Event.EndDateTime.Date >= dateFrom.Value.Date);
                 }
 
-                if (dateTo.HasValue)
+                if (dateRangeIsValid && dateTo.HasValue)
                 {
-                    eventQuery = eventQuery.Where(e => e.Event.EndDateTime.Date <= dateTo.Value.Date);
+                    eventQuery = eventQuery.Where(e => e.Event.StartDateTime.Date <= dateTo.Value.Date);
                 }
 
-                if (venueId.HasValue)
+                if (venueId.HasValue && venueIsValid)
                 {
                     eventQuery = eventQuery.Where(e =>
                         _context.Bookings.Any(b => b.EventId == e.Event.Id && b.VenueId == venueId.Value));
                 }
 
-                if (!string.IsNullOrWhiteSpace(venueAvailability))
+                if (!string.IsNullOrWhiteSpace(venueAvailability) && availabilityIsValid)
                 {
                     eventQuery = eventQuery.Where(e =>
                         (from booking in _context.Bookings
@@ -205,33 +246,33 @@ namespace Booking_webapp.Controllers
                         b.Status.ToLower().Contains(loweredTerm));
                 }
 
-                if (!string.IsNullOrWhiteSpace(bookingStatus))
+                if (!string.IsNullOrWhiteSpace(bookingStatus) && bookingStatusIsValid)
                 {
                     bookingQuery = bookingQuery.Where(b => b.Status == bookingStatus);
                 }
 
-                if (venueId.HasValue)
+                if (venueId.HasValue && venueIsValid)
                 {
                     bookingQuery = bookingQuery.Where(b => b.VenueId == venueId.Value);
                 }
 
-                if (eventTypeId.HasValue)
+                if (eventTypeId.HasValue && eventTypeIsValid)
                 {
                     bookingQuery = bookingQuery.Where(b =>
                         _context.Events.Any(evnt => evnt.Id == b.EventId && evnt.EventTypeId == eventTypeId.Value));
                 }
 
-                if (!string.IsNullOrWhiteSpace(venueAvailability))
+                if (!string.IsNullOrWhiteSpace(venueAvailability) && availabilityIsValid)
                 {
                     bookingQuery = bookingQuery.Where(b => b.VenueAvailability == venueAvailability);
                 }
 
-                if (dateFrom.HasValue)
+                if (dateRangeIsValid && dateFrom.HasValue)
                 {
                     bookingQuery = bookingQuery.Where(b => b.BookingDate.Date >= dateFrom.Value.Date);
                 }
 
-                if (dateTo.HasValue)
+                if (dateRangeIsValid && dateTo.HasValue)
                 {
                     bookingQuery = bookingQuery.Where(b => b.BookingDate.Date <= dateTo.Value.Date);
                 }

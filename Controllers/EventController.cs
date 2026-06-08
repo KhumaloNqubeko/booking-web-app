@@ -38,6 +38,33 @@ namespace Booking_webapp.Controllers
             DateTime? dateFrom = null,
             DateTime? dateTo = null)
         {
+            if (eventTypeId.HasValue &&
+                !await dbContext.EventTypes.AnyAsync(eventType => eventType.Id == eventTypeId.Value))
+            {
+                ModelState.AddModelError(nameof(eventTypeId), "Please select a valid event type.");
+            }
+
+            if (venueId.HasValue &&
+                !await dbContext.Venues.AnyAsync(venue => venue.Id == venueId.Value))
+            {
+                ModelState.AddModelError(nameof(venueId), "Please select a valid venue.");
+            }
+
+            if (!FilterValidation.IsAvailabilityValid(venueAvailability))
+            {
+                ModelState.AddModelError(nameof(venueAvailability), "Please select a valid venue availability.");
+            }
+
+            if (!FilterValidation.IsDateRangeValid(dateFrom, dateTo))
+            {
+                ModelState.AddModelError(nameof(dateTo), "The end date must be on or after the start date.");
+            }
+
+            if (!ModelState.IsValid)
+            {
+                return ValidationProblem(ModelState);
+            }
+
             var eventQuery = dbContext.Events.AsQueryable();
 
             if (eventTypeId.HasValue)
@@ -47,12 +74,12 @@ namespace Booking_webapp.Controllers
 
             if (dateFrom.HasValue)
             {
-                eventQuery = eventQuery.Where(evnt => evnt.StartDateTime.Date >= dateFrom.Value.Date);
+                eventQuery = eventQuery.Where(evnt => evnt.EndDateTime.Date >= dateFrom.Value.Date);
             }
 
             if (dateTo.HasValue)
             {
-                eventQuery = eventQuery.Where(evnt => evnt.EndDateTime.Date <= dateTo.Value.Date);
+                eventQuery = eventQuery.Where(evnt => evnt.StartDateTime.Date <= dateTo.Value.Date);
             }
 
             if (venueId.HasValue)

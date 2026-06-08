@@ -547,6 +547,11 @@ textarea:focus {
     display: none;
 }
 
+.filter-validation {
+    grid-column: 1 / -1;
+    margin: 0;
+}
+
 .field-validation-error {
     color: var(--danger);
     font-size: 0.88rem;

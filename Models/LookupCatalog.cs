@@ -36,5 +36,35 @@ namespace Booking_webapp.Models
         ];
     }
 
+    public static class BookingStatusCatalog
+    {
+        public const string Pending = "Pending";
+        public const string Confirmed = "Confirmed";
+        public const string Cancelled = "Cancelled";
+
+        public static IReadOnlyList<string> All { get; } =
+        [
+            Pending,
+            Confirmed,
+            Cancelled
+        ];
+    }
+
+    public static class SearchScopeCatalog
+    {
+        public const string All = "All";
+        public const string Venues = "Venues";
+        public const string Events = "Events";
+        public const string Bookings = "Bookings";
+
+        public static IReadOnlyList<string> AllValues { get; } =
+        [
+            All,
+            Venues,
+            Events,
+            Bookings
+        ];
+    }
+
     public sealed record EventTypeCatalogItem(int Id, string Name);
 }

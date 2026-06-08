@@ -5,18 +5,22 @@
     <Nullable>enable</Nullable>
     <ImplicitUsings>enable</ImplicitUsings>
     <RootNamespace>Booking_webapp</RootNamespace>
+    <UserSecretsId>EventEase-BookingWebApp-2026</UserSecretsId>
   </PropertyGroup>
 
   <ItemGroup>
     <Compile Remove="artifacts\**\*.cs" />
     <Compile Remove="obj\**\*.cs" />
     <Compile Remove="bin\**\*.cs" />
+    <Compile Remove="BookingWebApp.Tests\**\*.cs" />
     <Content Remove="artifacts\**" />
     <Content Remove="obj\**" />
     <Content Remove="bin\**" />
+    <Content Remove="BookingWebApp.Tests\**" />
     <None Remove="artifacts\**" />
     <None Remove="obj\**" />
     <None Remove="bin\**" />
+    <None Remove="BookingWebApp.Tests\**" />
     <PackageReference Include="Azure.Storage.Blobs" Version="12.27.0" />
     <PackageReference Include="Microsoft.AspNetCore.OpenApi" Version="10.0.5" />
     <PackageReference Include="Microsoft.EntityFrameworkCore.SqlServer" Version="10.0.5" />

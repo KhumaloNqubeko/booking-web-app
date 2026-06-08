@@ -28,6 +28,13 @@ namespace Booking_webapp.Controllers
         [HttpGet("")]
         public async Task<IActionResult> Index(string? searchTerm = null, string? availability = null)
         {
+            var availabilityIsValid = FilterValidation.IsAvailabilityValid(availability);
+
+            if (!availabilityIsValid)
+            {
+                ModelState.AddModelError(nameof(availability), "Please select a valid venue availability.");
+            }
+
             var venueQuery = _context.Venues.AsNoTracking();
 
             if (!string.IsNullOrWhiteSpace(searchTerm))
@@ -38,7 +45,7 @@ namespace Booking_webapp.Controllers
                     v.Location.ToLower().Contains(term));
             }
 
-            if (!string.IsNullOrWhiteSpace(availability))
+            if (!string.IsNullOrWhiteSpace(availability) && availabilityIsValid)
             {
                 venueQuery = venueQuery.Where(v => v.Availability == availability);
             }

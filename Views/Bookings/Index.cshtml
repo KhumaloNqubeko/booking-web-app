@@ -33,6 +33,7 @@
 
 <section class="panel filter-panel">
     <form method="get" asp-controller="BookingsPage" asp-action="Index" class="search-bar search-bar-bookings">
+        <div asp-validation-summary="All" class="filter-validation"></div>
         <input type="search" name="searchTerm" value="@Model.SearchTerm" placeholder="Search by venue, event, type, or status" />
         <select name="status">
             <option value="">All statuses</option>

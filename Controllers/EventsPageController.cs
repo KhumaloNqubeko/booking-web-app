@@ -34,6 +34,33 @@ namespace Booking_webapp.Controllers
             DateTime? dateFrom = null,
             DateTime? dateTo = null)
         {
+            var eventTypeIsValid = !eventTypeId.HasValue ||
+                await _context.EventTypes.AnyAsync(eventType => eventType.Id == eventTypeId.Value);
+            var venueIsValid = !venueId.HasValue ||
+                await _context.Venues.AnyAsync(venue => venue.Id == venueId.Value);
+            var availabilityIsValid = FilterValidation.IsAvailabilityValid(venueAvailability);
+            var dateRangeIsValid = FilterValidation.IsDateRangeValid(dateFrom, dateTo);
+
+            if (!eventTypeIsValid)
+            {
+                ModelState.AddModelError(nameof(eventTypeId), "Please select a valid event type.");
+            }
+
+            if (!venueIsValid)
+            {
+                ModelState.AddModelError(nameof(venueId), "Please select a valid venue.");
+            }
+
+            if (!availabilityIsValid)
+            {
+                ModelState.AddModelError(nameof(venueAvailability), "Please select a valid venue availability.");
+            }
+
+            if (!dateRangeIsValid)
+            {
+                ModelState.AddModelError(nameof(dateTo), "The end date must be on or after the start date.");
+            }
+
             var eventQuery =
                 from evnt in _context.Events.AsNoTracking()
                 join eventType in _context.EventTypes.AsNoTracking() on evnt.EventTypeId equals eventType.Id into eventTypeJoin
@@ -53,28 +80,28 @@ namespace Booking_webapp.Controllers
                     e.EventTypeName.ToLower().Contains(term));
             }
 
-            if (eventTypeId.HasValue)
+            if (eventTypeId.HasValue && eventTypeIsValid)
             {
                 eventQuery = eventQuery.Where(e => e.Event.EventTypeId == eventTypeId.Value);
             }
 
-            if (dateFrom.HasValue)
+            if (dateRangeIsValid && dateFrom.HasValue)
             {
-                eventQuery = eventQuery.Where(e => e.Event.StartDateTime.Date >= dateFrom.Value.Date);
+                eventQuery = eventQuery.Where(e => e.Event.EndDateTime.Date >= dateFrom.Value.Date);
             }
 
-            if (dateTo.HasValue)
+            if (dateRangeIsValid && dateTo.HasValue)
             {
-                eventQuery = eventQuery.Where(e => e.Event.EndDateTime.Date <= dateTo.Value.Date);
+                eventQuery = eventQuery.Where(e => e.Event.StartDateTime.Date <= dateTo.Value.Date);
             }
 
-            if (venueId.HasValue)
+            if (venueId.HasValue && venueIsValid)
             {
                 eventQuery = eventQuery.Where(e =>
                     _context.Bookings.Any(b => b.EventId == e.Event.Id && b.VenueId == venueId.Value));
             }
 
-            if (!string.IsNullOrWhiteSpace(venueAvailability))
+            if (!string.IsNullOrWhiteSpace(venueAvailability) && availabilityIsValid)
             {
                 eventQuery = eventQuery.Where(e =>
                     (from booking in _context.Bookings

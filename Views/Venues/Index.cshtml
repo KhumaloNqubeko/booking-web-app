@@ -15,6 +15,7 @@
 
 <section class="panel filter-panel">
     <form method="get" asp-controller="VenuesPage" asp-action="Index" class="search-bar search-bar-venues">
+        <div asp-validation-summary="All" class="filter-validation"></div>
         <input type="search" name="searchTerm" value="@Model.SearchTerm" placeholder="Search venues by name or location" />
         <select name="availability">
             <option value="">All availability</option>

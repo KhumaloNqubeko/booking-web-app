@@ -12,6 +12,7 @@
 
 <section class="panel filter-panel">
     <form method="get" asp-controller="Explore" asp-action="Index" class="search-bar search-bar-bookings">
+        <div asp-validation-summary="All" class="filter-validation"></div>
         <input type="search" name="query" value="@Model.Query" placeholder="Search by venue, event, type, location, or status" />
         <select name="scope">
             <option value="All" selected="@(Model.Scope == "All" ? "selected" : null)">Everything</option>

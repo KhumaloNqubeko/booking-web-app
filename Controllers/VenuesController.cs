@@ -33,6 +33,12 @@ namespace Booking_webapp.Controllers
         [HttpGet]
         public async Task<IActionResult> GetAllVenues(string? availability = null)
         {
+            if (!FilterValidation.IsAvailabilityValid(availability))
+            {
+                ModelState.AddModelError(nameof(availability), "Please select a valid venue availability.");
+                return ValidationProblem(ModelState);
+            }
+
             var venues = dbContext.Venues.AsQueryable();
 
             if (!string.IsNullOrWhiteSpace(availability))
